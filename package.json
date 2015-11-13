@@ -1,0 +1,37 @@
+{
+  "name": "kuromojin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azu/kuromojin.git"
+  },
+  "author": "azu",
+  "email": "azuciao@gmail.com",
+  "homepage": "https://github.com/azu/kuromojin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/azu/kuromojin/issues"
+  },
+  "version": "1.0.0",
+  "description": "Provide a high level wrapper for kuromoji.js",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [
+    "kuromoji",
+    "kuromoji.js",
+    "promise"
+  ],
+  "dependencies": {
+    "kuromoji": "0.0.4"
+  },
+  "devDependencies": {
+    "babel": "^5.8.34",
+    "espower-babel": "^3.3.0",
+    "mocha": "^2.3.3",
+    "power-assert": "^1.1.0"
+  }
+}
