@@ -1,4 +1,4 @@
-# kuromojin
+# kuromojin [![Build Status](https://travis-ci.org/azu/kuromojin.svg?branch=master)](https://travis-ci.org/azu/kuromojin)
 
 Provide a high level wrapper for [kuromoji.js](https://github.com/takuyaa/kuromoji.js "kuromoji.js").
 
