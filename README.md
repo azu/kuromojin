@@ -15,6 +15,9 @@ Provide a high level wrapper for [kuromoji.js](https://github.com/takuyaa/kuromo
 
 Export two API.
 
+- `getTokenizer()` return `Promise` that is resolved with kuromoji.js's `tokenizer` instance.
+- `kuromojin as default` return `Promise` that is resolved with analyzed text.
+
 ```js
 import kuromojin from "kuromojin";
 import {getTokenizer} from "kuromojin";
