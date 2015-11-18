@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/azu/kuromojin/issues"
   },
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Provide a high level wrapper for kuromoji.js",
   "main": "lib/kuromojin.js",
   "files": [
