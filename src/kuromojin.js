@@ -28,8 +28,9 @@ export function getTokenizer() {
     });
     return deferred.promise;
 }
-export default function kuromojin(text) {
+export function tokenize(text) {
     return getTokenizer().then(tokenizer => {
         return tokenizer.tokenize(text);
     })
 }
+export default tokenize;
