@@ -19,14 +19,13 @@ Export two API.
 - `kuromojin as default` return `Promise` that is resolved with analyzed text.
 
 ```js
-import kuromojin from "kuromojin";
-import {getTokenizer} from "kuromojin";
+import {tokenize, getTokenizer} from "kuromojin";
 
 getTokenizer().then(tokenizer => {
     // kuromoji.js's `tokenizer` instance
 });
 
-kuromojin(text).then(results => {
+tokenize(text).then(results => {
     console.log(results)
     /*
     [ {
@@ -46,6 +45,21 @@ kuromojin(text).then(results => {
       } ]
     */
 });
+```
+
+### Note: backward compatibility for <= 1.1.0
+
+kuromojin v1.1.0 export `tokenize` as default function
+
+```js
+import kuromojin from "kuromojin";
+// kuromojin === tokenize
+```
+
+Recommended use `import {tokenize} from "kuromojin"` instead of it
+
+```js
+import {tokenize} from "kuromojin";
 ```
 
 ## Tests

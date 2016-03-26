@@ -1,8 +1,9 @@
 // LICENSE : MIT
 "use strict";
 import assert from "power-assert";
-import kuromojin from "../src/kuromojin";
-import {getTokenizer} from "../src/kuromojin";
+// it is compatible check for <= 1.1.0
+import defaultFunction from "../src";
+import {getTokenizer, tokenize} from "../src";
 describe("kuromojin", function () {
     context("many access at a time", function () {
         it("should return a.promise", function () {
@@ -17,11 +18,23 @@ describe("kuromojin", function () {
             });
         });
     });
-    context("kuromojin", function () {
+    context("tokenize", function () {
+        it("is alias to default", function () {
+            var data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            var promises = data.map(num => {
+                return defaultFunction(String(num));
+            });
+            return Promise.all(promises).then(texts => {
+                texts.forEach((results, index) => {
+                    let firstNode = results[0];
+                    assert.equal(firstNode.surface_form, String(index));
+                });
+            });
+        });
         it("should return a.promise that resolve analyzed text", function () {
             var data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
             var promises = data.map(num => {
-                return kuromojin(String(num));
+                return tokenize(String(num));
             });
             return Promise.all(promises).then(texts => {
                 texts.forEach((results, index) => {
