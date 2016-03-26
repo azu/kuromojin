@@ -1,8 +1,9 @@
 // LICENSE : MIT
 "use strict";
-import kuromoji from "kuromoji";
-import path from "path";
+const path = require("path");
+const kuromoji = require("kuromoji");
 import Deferred from "./Deferred";
+
 const kuromojiDir = require.resolve("kuromoji");
 const options = {dicPath: path.join(kuromojiDir, "../../dict") + "/"};
 const deferred = new Deferred();
@@ -31,6 +32,5 @@ export function getTokenizer() {
 export function tokenize(text) {
     return getTokenizer().then(tokenizer => {
         return tokenizer.tokenize(text);
-    })
+    });
 }
-export default tokenize;
