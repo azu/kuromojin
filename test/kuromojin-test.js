@@ -43,5 +43,13 @@ describe("kuromojin", function () {
                 });
             });
         });
+        it("should tokenize sentence", function () {
+            return tokenize("これは1文。これは2文。").then(tokens => {
+                const firstToken = tokens[0];
+                assert.equal(firstToken.word_position, 1);
+                const lastToken = tokens[tokens.length - 1];
+                assert.equal(lastToken.word_position, 12);
+            });
+        });
     });
 });

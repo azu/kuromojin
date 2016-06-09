@@ -32,6 +32,6 @@ export function getTokenizer(options = {dicPath: getNodeModuleDirPath()}) {
 }
 export function tokenize(text) {
     return getTokenizer().then(tokenizer => {
-        return tokenizer.tokenize(text);
+        return tokenizer.tokenizeForSentence(text);
     });
 }
