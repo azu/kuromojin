@@ -13,7 +13,6 @@ let _tokenizer = null;
 // lock boolean
 let isLoading = false;
 export function getTokenizer(options = {dicPath: getNodeModuleDirPath()}) {
-    console.log(options);
     if (_tokenizer) {
         return Promise.resolve(_tokenizer);
     }
