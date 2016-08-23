@@ -5,8 +5,8 @@ const kuromoji = require("kuromoji");
 import Deferred from "./Deferred";
 const deferred = new Deferred();
 const getNodeModuleDirPath = () => {
-    const kuromojiDir = require.resolve("kuromoji");
-    return path.join(kuromojiDir, "../../dict") + "/";
+    const kuromojiDir = path.dirname(require.resolve("kuromoji"));
+    return path.join(kuromojiDir, "..", "dict");
 };
 // cache for tokenizer
 let _tokenizer = null;
@@ -21,7 +21,7 @@ export function getTokenizer(options = {dicPath: getNodeModuleDirPath()}) {
     }
     isLoading = true;
     // load dict
-    kuromoji.builder(options).build(function (err, tokenizer) {
+    kuromoji.builder(options).build(function(err, tokenizer) {
         if (err) {
             return deferred.reject(err);
         }
