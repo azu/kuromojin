@@ -3,8 +3,17 @@
 const path = require("path");
 const kuromoji = require("kuromoji");
 import Deferred from "./Deferred";
+
 const deferred = new Deferred();
 const getNodeModuleDirPath = () => {
+    // if window.kuromojin.dicPath is defined, use it as default dict path.
+    if (
+        typeof window !== "undefined" &&
+        typeof window.kuromojin === "object" &&
+        typeof window.kuromojin.dicPath === "string"
+    ) {
+        return window.kuromojin.dicPath;
+    }
     const kuromojiDir = path.dirname(require.resolve("kuromoji"));
     return path.join(kuromojiDir, "..", "dict");
 };
@@ -12,7 +21,8 @@ const getNodeModuleDirPath = () => {
 let _tokenizer = null;
 // lock boolean
 let isLoading = false;
-export function getTokenizer(options = {dicPath: getNodeModuleDirPath()}) {
+
+export function getTokenizer(options = { dicPath: getNodeModuleDirPath() }) {
     if (_tokenizer) {
         return Promise.resolve(_tokenizer);
     }
@@ -30,6 +40,7 @@ export function getTokenizer(options = {dicPath: getNodeModuleDirPath()}) {
     });
     return deferred.promise;
 }
+
 export function tokenize(text) {
     return getTokenizer().then(tokenizer => {
         return tokenizer.tokenizeForSentence(text);
