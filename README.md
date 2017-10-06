@@ -47,6 +47,22 @@ tokenize(text).then(results => {
 });
 ```
 
+### For browser/global options
+
+If `window.kuromojin.dicPath` is defined, kuromojin use it as default dict path.
+
+```js
+import {tokenize} from "kuromojin";
+// Affect all module that are used kuromojin.
+window.kuromojin = {
+    dicPath: "https://example.com/kuromoji/dict"
+};
+// this `getTokenizer` function use "https://example.com/kuromoji/dict" 
+getTokenizer();
+// === 
+getTokenizer({dicPath: "https://example.com/kuromoji/dict"})
+```
+
 ### Note: backward compatibility for <= 1.1.0
 
 kuromojin v1.1.0 export `tokenize` as default function
