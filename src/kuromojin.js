@@ -6,6 +6,12 @@ import Deferred from "./Deferred";
 
 const deferred = new Deferred();
 const getNodeModuleDirPath = () => {
+    // Node
+    if (typeof process !== "undefined"
+        && typeof process.env === "object"
+        && process.env.KUROMOJIN_DIC_PATH) {
+        return process.env.KUROMOJIN_DIC_PATH;
+    }
     // if window.kuromojin.dicPath is defined, use it as default dict path.
     if (
         typeof window !== "undefined" &&
