@@ -85,7 +85,7 @@ import {tokenize} from "kuromojin";
 kuromojin pin kuromoji's version.
 
 It aim to dedupe kuromoji's dictionary.
-The dictionary is large and 
+The dictionary is large and avoid to duplicated dictionary. 
 
 ## Tests
 
