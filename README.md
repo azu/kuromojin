@@ -65,14 +65,16 @@ getTokenizer({dicPath: "https://example.com/kuromoji/dict"})
 
 ### Note: backward compatibility for <= 1.1.0
 
-kuromojin v1.1.0 export `tokenize` as default function
+kuromojin v1.1.0 export `tokenize` as default function.
+
+kuromojin v2.0.0 remove the default function.
 
 ```js
 import kuromojin from "kuromojin";
 // kuromojin === tokenize
 ```
 
-Recommended use `import {tokenize} from "kuromojin"` instead of it
+Recommended: use `import {tokenize} from "kuromojin"` instead of it
 
 ```js
 import {tokenize} from "kuromojin";
