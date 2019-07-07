@@ -40,8 +40,8 @@ export type KuromojiToken = {
 type KuromojiWindow = Window & {
     kuromojin?: {
         dicPath?: string;
-    }
-}
+    };
+};
 const deferred = new Deferred<Tokenizer>();
 const getNodeModuleDirPath = () => {
     // if window.kuromojin.dicPath is defined, use it as default dict path.
@@ -66,7 +66,7 @@ export type getTokenizerOption = {
     dicPath: string;
 };
 
-export function getTokenizer(options: getTokenizerOption = {dicPath: getNodeModuleDirPath()}): Promise<Tokenizer> {
+export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeModuleDirPath() }): Promise<Tokenizer> {
     if (_tokenizer) {
         return Promise.resolve(_tokenizer);
     }
@@ -75,7 +75,7 @@ export function getTokenizer(options: getTokenizerOption = {dicPath: getNodeModu
     }
     isLoading = true;
     // load dict
-    kuromoji.builder(options).build(function (err: undefined | Error, tokenizer: Tokenizer) {
+    kuromoji.builder(options).build(function(err: undefined | Error, tokenizer: Tokenizer) {
         if (err) {
             return deferred.reject(err);
         }
