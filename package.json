@@ -1,6 +1,6 @@
 {
   "name": "kuromojin",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Provide a high level wrapper for kuromoji.js",
   "keywords": [
     "kuromoji",
@@ -16,17 +16,11 @@
     "url": "git+https://github.com/azu/kuromojin.git"
   },
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/azu/kuromojin/issues"
-  },
-  "version": "1.5.1",
-  "description": "Provide a high level wrapper for kuromoji.js",
   "main": "lib/index.js",
   "files": [
     "lib/",
     "src/"
   ],
-  "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "directories": {
     "test": "test"
