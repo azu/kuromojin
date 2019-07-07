@@ -80,6 +80,13 @@ Recommended: use `import {tokenize} from "kuromojin"` instead of it
 import {tokenize} from "kuromojin";
 ```
 
+### Note: kuromoji version is pinned
+
+kuromojin pin kuromoji's version.
+
+It aim to dedupe kuromoji's dictionary.
+The dictionary is large and 
+
 ## Tests
 
     npm test

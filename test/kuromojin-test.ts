@@ -27,7 +27,7 @@ describe("kuromojin", function() {
             return Promise.all(promises).then(texts => {
                 texts.forEach((results, index) => {
                     let firstNode = results[0];
-                    assert.equal(firstNode.surface_form, String(index));
+                    assert.strictEqual(firstNode.surface_form, String(index));
                 });
             });
         });
