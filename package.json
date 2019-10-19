@@ -30,7 +30,8 @@
     "prepublish": "npm run --if-present build",
     "test": "mocha \"test/**/*.{js,ts}\"",
     "watch": "tsc -p . --watch",
-    "prettier": "prettier --write \"**/*.{js,jsx,ts,tsx,css}\""
+    "prettier": "prettier --write \"**/*.{js,jsx,ts,tsx,css}\"",
+    "netlify": "mkdir -p public && cp -r node_modules/kuromoji/dict public/"
   },
   "dependencies": {
     "kuromoji": "0.1.1"
