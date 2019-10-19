@@ -4,6 +4,11 @@
   functions = "functions"
   publish = "public"
 
+  [[headers]]
+    # Define which paths this specific [[headers]] block will cover.
+    for = "/dict/*"
+      [headers.values]
+      Access-Control-Allow-Origin = "*"
   ## Uncomment to use this redirect for Single Page Applications like create-react-app. 
   ## Not needed for static site generators.
   #[[redirects]]
