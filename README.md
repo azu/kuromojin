@@ -55,13 +55,17 @@ If `window.kuromojin.dicPath` is defined, kuromojin use it as default dict path.
 import {tokenize} from "kuromojin";
 // Affect all module that are used kuromojin.
 window.kuromojin = {
-    dicPath: "https://example.com/kuromoji/dict"
+    dicPath: "https://kuromojin.netlify.com/dict"
 };
-// this `getTokenizer` function use "https://example.com/kuromoji/dict" 
+// this `getTokenizer` function use "https://kuromojin.netlify.com/dict" 
 getTokenizer();
 // === 
-getTokenizer({dicPath: "https://example.com/kuromoji/dict"})
+getTokenizer({dicPath: "https://kuromojin.netlify.com/dict"})
 ```
+
+:memo: Test dictionary URL
+
+- https://kuromojin.netlify.com/dict/*.dat.gz
 
 ### Note: backward compatibility for <= 1.1.0
 
