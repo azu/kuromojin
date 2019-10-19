@@ -66,6 +66,7 @@ getTokenizer({dicPath: "https://kuromojin.netlify.com/dict"})
 :memo: Test dictionary URL
 
 - https://kuromojin.netlify.com/dict/*.dat.gz
+    - example: https://kuromojin.netlify.com/dict/base.dat.gz
 
 ### Note: backward compatibility for <= 1.1.0
 
