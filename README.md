@@ -52,7 +52,7 @@ tokenize(text).then(results => {
 If `window.kuromojin.dicPath` is defined, kuromojin use it as default dict path.
 
 ```js
-import {tokenize} from "kuromojin";
+import {getTokenizer} from "kuromojin";
 // Affect all module that are used kuromojin.
 window.kuromojin = {
     dicPath: "https://kuromojin.netlify.com/dict"
