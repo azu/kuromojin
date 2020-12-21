@@ -62,11 +62,13 @@ window.kuromojin = {
 // this `getTokenizer` function use "https://kuromojin.netlify.com/dict" 
 getTokenizer();
 // === 
-getTokenizer({dicPath: "https://kuromojin.netlify.com/dict"})
+getTokenizer({dicPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict"})
 ```
 
 :memo: Test dictionary URL
 
+- "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict"
+    - cdn dict for kuromoji.js
 - https://kuromojin.netlify.com/dict/*.dat.gz
     - example: https://kuromojin.netlify.com/dict/base.dat.gz
 
