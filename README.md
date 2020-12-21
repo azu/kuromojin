@@ -1,4 +1,4 @@
-# kuromojin [![Build Status](https://travis-ci.org/azu/kuromojin.svg?branch=master)](https://travis-ci.org/azu/kuromojin)
+# kuromojin [![Actions Status: test](https://github.com/azu/kuromojin/workflows/test/badge.svg)](https://github.com/azu/kuromojin/actions?query=workflow%3A"test")
 
 Provide a high level wrapper for [kuromoji.js](https://github.com/takuyaa/kuromoji.js "kuromoji.js").
 
@@ -6,6 +6,8 @@ Provide a high level wrapper for [kuromoji.js](https://github.com/takuyaa/kuromo
 
 - Promise based API
 - Cache Layer
+    - Fetch the dictionary at once
+    - Return same tokens for same text
 
 ## Installation
 

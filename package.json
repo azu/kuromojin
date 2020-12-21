@@ -34,19 +34,19 @@
     "netlify": "mkdir -p public && cp -r node_modules/kuromoji/dict public/"
   },
   "dependencies": {
-    "kuromoji": "0.1.1"
+    "kuromoji": "^0.1.1"
   },
   "devDependencies": {
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^12.0.12",
-    "cross-env": "^5.2.0",
-    "husky": "^3.0.0",
-    "lint-staged": "^9.1.0",
-    "mocha": "^6.1.4",
-    "prettier": "^1.18.2",
-    "ts-node": "^8.3.0",
-    "ts-node-test-register": "^8.0.1",
-    "typescript": "^3.5.2"
+    "@types/mocha": "^8.2.0",
+    "@types/node": "^14.14.14",
+    "cross-env": "^7.0.3",
+    "husky": "^4.3.6",
+    "lint-staged": "^10.5.3",
+    "mocha": "^8.2.1",
+    "prettier": "^2.2.1",
+    "ts-node": "^9.1.1",
+    "ts-node-test-register": "^9.0.1",
+    "typescript": "^4.1.3"
   },
   "email": "azuciao@gmail.com",
   "prettier": {

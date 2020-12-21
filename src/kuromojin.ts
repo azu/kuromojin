@@ -66,14 +66,17 @@ const getNodeModuleDirPath = () => {
 
 // cache for tokenizer
 let _tokenizer: null | Tokenizer = null;
+let tokenizeCacheMap = new Map<string, KuromojiToken[]>()
 // lock boolean
 let isLoading = false;
 
 export type getTokenizerOption = {
     dicPath: string;
+    // Default: false
+    noCache?: boolean
 };
 
-export function getTokenizer(options: getTokenizerOption = {dicPath: getNodeModuleDirPath()}): Promise<Tokenizer> {
+export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeModuleDirPath() }): Promise<Tokenizer> {
     if (_tokenizer) {
         return Promise.resolve(_tokenizer);
     }
@@ -92,8 +95,18 @@ export function getTokenizer(options: getTokenizerOption = {dicPath: getNodeModu
     return deferred.promise;
 }
 
-export function tokenize(text: string, options?: getTokenizerOption) {
+export function tokenize(text: string, options?: getTokenizerOption): Promise<KuromojiToken[]> {
     return getTokenizer(options).then(tokenizer => {
-        return tokenizer.tokenizeForSentence(text);
+        if (options?.noCache) {
+            return tokenizer.tokenizeForSentence(text);
+        } else {
+            const cache = tokenizeCacheMap.get(text);
+            if (cache) {
+                return cache;
+            }
+            const tokens = tokenizer.tokenizeForSentence(text);
+            tokenizeCacheMap.set(text, tokens);
+            return tokens;
+        }
     });
 }
