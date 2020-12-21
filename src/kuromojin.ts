@@ -72,8 +72,9 @@ let isLoading = false;
 
 export type getTokenizerOption = {
     dicPath: string;
+    // Cache by default
     // Default: false
-    noCache?: boolean
+    noCacheTokenize?: boolean
 };
 
 export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeModuleDirPath() }): Promise<Tokenizer> {
@@ -97,7 +98,7 @@ export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeMod
 
 export function tokenize(text: string, options?: getTokenizerOption): Promise<KuromojiToken[]> {
     return getTokenizer(options).then(tokenizer => {
-        if (options?.noCache) {
+        if (options?.noCacheTokenize) {
             return tokenizer.tokenizeForSentence(text);
         } else {
             const cache = tokenizeCacheMap.get(text);
