@@ -670,14 +670,14 @@ json-parse-even-better-errors@^2.3.0:
   resolved "https://registry.yarnpkg.com/json-parse-even-better-errors/-/json-parse-even-better-errors-2.3.1.tgz#7c47805a94319928e05777405dc12e1f7a4ee02d"
   integrity sha512-xyFwyhro/JEof6Ghe2iz2NcXoj2sloNsWr/XsERDK/oiPCfaNhl5ONfp+jQdAZRQQ0IJWNzH9zIZF7li91kh2w==
 
-kuromoji@^0.1.1:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/kuromoji/-/kuromoji-0.1.2.tgz#293f0d6706df006112137980588d5daac26d0790"
-  integrity sha512-V0dUf+C2LpcPEXhoHLMAop/bOht16Dyr+mDiIE39yX3vqau7p80De/koFqpiTcL1zzdZlc3xuHZ8u5gjYRfFaQ==
+kuromoji@0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/kuromoji/-/kuromoji-0.1.1.tgz#4aabf39bcced8b8ad92d007a04a26be6da8477c9"
+  integrity sha1-Sqvzm8zti4rZLQB6BKJr5tqEd8k=
   dependencies:
     async "^2.0.1"
     doublearray "0.0.2"
-    zlibjs "^0.3.1"
+    zlibjs "^0.2.0"
 
 lines-and-columns@^1.1.6:
   version "1.1.6"
@@ -1438,7 +1438,7 @@ yocto-queue@^0.1.0:
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
-zlibjs@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/zlibjs/-/zlibjs-0.3.1.tgz#50197edb28a1c42ca659cc8b4e6a9ddd6d444554"
-  integrity sha1-UBl+2yihxCymWcyLTmqd3W1ERVQ=
+zlibjs@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/zlibjs/-/zlibjs-0.2.0.tgz#ae20f06243293d85c255563189f9b12f5b3ba1a0"
+  integrity sha1-riDwYkMpPYXCVVYxifmxL1s7oaA=

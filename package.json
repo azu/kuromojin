@@ -34,7 +34,7 @@
     "netlify": "mkdir -p public && cp -r node_modules/kuromoji/dict public/"
   },
   "dependencies": {
-    "kuromoji": "^0.1.1"
+    "kuromoji": "0.1.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.0",
