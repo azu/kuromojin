@@ -1,9 +1,10 @@
 // LICENSE : MIT
 "use strict";
 import path from "path";
+import { LRUMap } from 'lru_map'
+import Deferred from "./Deferred";
 
 const kuromoji = require("kuromoji");
-import Deferred from "./Deferred";
 
 export type Tokenizer = {
     tokenize: (text: string) => KuromojiToken[];
@@ -66,9 +67,10 @@ const getNodeModuleDirPath = () => {
 
 // cache for tokenizer
 let _tokenizer: null | Tokenizer = null;
-let tokenizeCacheMap = new Map<string, KuromojiToken[]>()
 // lock boolean
 let isLoading = false;
+// cache for tokenize
+const tokenizeCacheMap = new LRUMap<string, KuromojiToken[]>(10000);
 
 export type getTokenizerOption = {
     dicPath: string;
