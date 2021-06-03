@@ -27,8 +27,8 @@ getTokenizer().then(tokenizer => {
     // kuromoji.js's `tokenizer` instance
 });
 
-tokenize(text).then(results => {
-    console.log(results)
+tokenize(text).then(tokens => {
+    console.log(tokens)
     /*
     [ {
         word_id: 509800,          // 辞書内での単語ID
