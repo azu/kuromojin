@@ -38,16 +38,16 @@
     "lru_map": "^0.4.1"
   },
   "devDependencies": {
-    "@types/mocha": "^8.2.0",
-    "@types/node": "^14.14.14",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.13.0",
     "cross-env": "^7.0.3",
-    "husky": "^4.3.6",
-    "lint-staged": "^10.5.3",
-    "mocha": "^8.2.1",
-    "prettier": "^2.2.1",
-    "ts-node": "^9.1.1",
-    "ts-node-test-register": "^9.0.1",
-    "typescript": "^4.1.3"
+    "husky": "^8.0.3",
+    "lint-staged": "^13.1.1",
+    "mocha": "^10.2.0",
+    "prettier": "^2.8.4",
+    "ts-node": "^10.9.1",
+    "ts-node-test-register": "^10.0.0",
+    "typescript": "^4.9.5"
   },
   "email": "azuciao@gmail.com",
   "prettier": {
