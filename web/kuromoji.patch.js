@@ -2,7 +2,7 @@
 // https://github.com/hexenq/kuroshiro/issues/27
 import { kvsEnvStorage } from "@kvs/env";
 import BrowserDictionaryLoader from "kuromoji/src/loader/BrowserDictionaryLoader";
-import zlib from "zlibjs/bin/gunzip.min.js";
+import Compressor from "tiny-compressor";
 //=== Modify kuromoji.js's browser loader
 const urlMap = new Map();
 
@@ -46,18 +46,15 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = async function (url, callbac
     const deferred = new Deferred();
     urlMap.set(fixedURL, deferred);
     fetch(fixedURL)
-        .then(function (response) {
+        .then(async function (response) {
             if (!response.ok) {
                 return callback(response.statusText, null);
             }
-            response.arrayBuffer().then(function (arraybuffer) {
-                var gz = new zlib.Zlib.Gunzip(new Uint8Array(arraybuffer));
-                var typed_array = gz.decompress();
-                return stroage.set(fixedURL, typed_array.buffer).then(() => {
-                    // console.log("cached", fixedURL);
-                    deferred.resolve(typed_array.buffer);
-                    callback(null, typed_array.buffer);
-                });
+            const arraybuffer = await response.arrayBuffer();
+            const typedArray = await Compressor.decompress(new Uint8Array(arraybuffer), "gzip");
+            return stroage.set(fixedURL, typedArray).then(() => {
+                deferred.resolve(typedArray);
+                callback(null, typedArray);
             });
         })
         .catch(function (exception) {

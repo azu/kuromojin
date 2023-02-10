@@ -2031,6 +2031,11 @@ timers-browserify@^2.0.4:
   dependencies:
     setimmediate "^1.0.4"
 
+tiny-compressor@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/tiny-compressor/-/tiny-compressor-1.0.0.tgz#447c7643c0066b77d8c8e7033e5bca0f964ac011"
+  integrity sha512-k/yRhNzk3YSOVNBz69THIepItUxGaHUE5zxONhOIARiiXpHUvJTVeFxmX2O0hB7aHzUxeFiMZlQOmH6iynOTiA==
+
 to-regex-range@^5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/to-regex-range/-/to-regex-range-5.0.1.tgz#1648c44aae7c8d988a326018ed72f5b4dd0392e4"
