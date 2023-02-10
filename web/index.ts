@@ -1,21 +1,21 @@
 import "./kuromoji.patch.js";
 import { getTokenizer } from "../src/index";
 
-const DICT_URL = "/dict";
+const DICT_URL = "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict";
 export const loadTokenizer = async () => {
     return await getTokenizer({
         dicPath: DICT_URL
     });
 };
 export const run = async () => {
-    const loadinElement = document.querySelector("#loading") as HTMLDivElement;
+    const loadingElement = document.querySelector("#loading") as HTMLDivElement;
     const textElement = document.querySelector("#text") as HTMLTextAreaElement;
     const jsonElement = document.querySelector("#json") as HTMLTextAreaElement;
-    loadinElement.textContent = "🤖Loading dictionary...";
+    loadingElement.textContent = "🤖Loading dictionary...";
     const tokenizer = await loadTokenizer();
-    loadinElement.textContent = "🤖Complete loading!";
+    loadingElement.textContent = "🤖Complete loading!";
     setTimeout(() => {
-        loadinElement.textContent = "🤖You can tokenize text!";
+        loadingElement.textContent = "🤖You can tokenize text!";
     }, 1000);
     const onUpdate = (text: string) => {
         try {
