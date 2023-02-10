@@ -1,10 +1,10 @@
 // LICENSE : MIT
 "use strict";
 import path from "path";
-import { LRUMap } from 'lru_map'
+import { LRUMap } from "lru_map";
 import Deferred from "./Deferred";
-
-const kuromoji = require("kuromoji");
+// @ts-expect-error: no type definition
+import kuromoji from "kuromoji";
 
 export type Tokenizer = {
     tokenize: (text: string) => KuromojiToken[];
@@ -46,9 +46,7 @@ type KuromojiWindow = Window & {
 const deferred = new Deferred<Tokenizer>();
 const getNodeModuleDirPath = () => {
     // Node
-    if (typeof process !== "undefined"
-        && typeof process.env === "object"
-        && process.env.KUROMOJIN_DIC_PATH) {
+    if (typeof process !== "undefined" && typeof process.env === "object" && process.env.KUROMOJIN_DIC_PATH) {
         return process.env.KUROMOJIN_DIC_PATH;
     }
     // Browser
@@ -76,7 +74,7 @@ export type getTokenizerOption = {
     dicPath: string;
     // Cache by default
     // Default: false
-    noCacheTokenize?: boolean
+    noCacheTokenize?: boolean;
 };
 
 export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeModuleDirPath() }): Promise<Tokenizer> {
@@ -99,7 +97,7 @@ export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeMod
 }
 
 export function tokenize(text: string, options?: getTokenizerOption): Promise<KuromojiToken[]> {
-    return getTokenizer(options).then(tokenizer => {
+    return getTokenizer(options).then((tokenizer) => {
         if (options?.noCacheTokenize) {
             return tokenizer.tokenizeForSentence(text);
         } else {

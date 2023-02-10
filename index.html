@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>kuromojin</title>
+    <link href="./web/index.css" rel="stylesheet">
+    <script type="module">
+        // Avoid Vite sideEffects bug
+        // https://github.com/vitejs/vite/issues/10735
+        import { run } from "./web/index.ts";
+
+        run();
+    </script>
+</head>
+<body>
+<div id="loading"></div>
+<main class="main">
+    <div class="mainText">
+        <label for="text" class="mainLabel">Text</label><textarea id="text"></textarea>
+    </div>
+    <div class="outputJSON">
+        <label for="json" class="mainLabel">JSON</label><textarea readonly id="json"></textarea>
+    </div>
+</main>
+</body>
+</html>

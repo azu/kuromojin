@@ -1,4 +1,6 @@
+/dist
 /lib
+/public/dict
 ### https://raw.github.com/github/gitignore/608690d6b9a78c2a003affc792e49a84905b3118/Node.gitignore
 
 # Logs
@@ -82,7 +84,7 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 
-
-
 # Local Netlify folder
 .netlify
+
+/public/dict/

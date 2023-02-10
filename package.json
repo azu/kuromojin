@@ -26,12 +26,17 @@
     "test": "test"
   },
   "scripts": {
+    "dev": "npm run cp-public && vite",
+    "preview": "npm run cp-public && vite preview",
+    "web:build": "npm run cp-public && vite build",
     "build": "cross-env NODE_ENV=production tsc -p .",
     "prepublish": "npm run --if-present build",
     "test": "mocha \"test/**/*.{js,ts}\"",
     "watch": "tsc -p . --watch",
-    "prettier": "prettier --write \"**/*.{js,jsx,ts,tsx,css}\"",
-    "netlify": "mkdir -p public && cp -r node_modules/kuromoji/dict public/"
+    "cp-public": "mkdir -p public && cp -r node_modules/kuromoji/dict public/",
+    "netlify": "npm run web:build",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css}\"",
+    "prepare": "git config --local core.hooksPath .githooks"
   },
   "dependencies": {
     "kuromoji": "0.1.2",
@@ -41,29 +46,26 @@
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.13.0",
     "cross-env": "^7.0.3",
-    "husky": "^8.0.3",
     "lint-staged": "^13.1.1",
     "mocha": "^10.2.0",
+    "node-stdlib-browser": "^1.2.0",
     "prettier": "^2.8.4",
     "ts-node": "^10.9.1",
     "ts-node-test-register": "^10.0.0",
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1",
+    "vite-plugin-node-stdlib-browser": "^0.1.1"
   },
   "email": "azuciao@gmail.com",
   "prettier": {
     "singleQuote": false,
     "printWidth": 120,
-    "tabWidth": 4
-  },
-  "husky": {
-    "hooks": {
-      "precommit": "lint-staged"
-    }
+    "tabWidth": 4,
+    "trailingComma": "none"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css}": [
-      "prettier --write",
-      "git add"
+      "prettier --write"
     ]
   }
 }

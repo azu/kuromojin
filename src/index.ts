@@ -1,2 +1,2 @@
-import { getTokenizer, getTokenizerOption, KuromojiToken, tokenize, Tokenizer } from "./kuromojin";
-export { getTokenizer, getTokenizerOption, KuromojiToken, tokenize, Tokenizer };
+export type { getTokenizerOption, Tokenizer, KuromojiToken } from "./kuromojin";
+export { getTokenizer, tokenize } from "./kuromojin";
