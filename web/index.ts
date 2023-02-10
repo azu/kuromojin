@@ -11,7 +11,7 @@ export const run = async () => {
     const loadingElement = document.querySelector("#loading") as HTMLDivElement;
     const textElement = document.querySelector("#text") as HTMLTextAreaElement;
     const jsonElement = document.querySelector("#json") as HTMLTextAreaElement;
-    loadingElement.textContent = "🤖Loading dictionary...";
+    loadingElement.textContent = "🤖Loading dictionary... Require DecompressionStream support.";
     const tokenizer = await loadTokenizer();
     loadingElement.textContent = "🤖Complete loading!";
     setTimeout(() => {
