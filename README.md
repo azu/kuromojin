@@ -13,6 +13,12 @@ Provide a high level wrapper for [kuromoji.js](https://github.com/takuyaa/kuromo
 
     npm install kuromojin
 
+## Online Playground
+
+📝 Require [DecompressionStream](https://developer.mozilla.org/ja/docs/Web/API/DecompressionStream) supported browser
+
+- <https://kuromojin.netlify.app/>
+
 ## Usage
 
 Export two API.
