@@ -77,7 +77,7 @@ export type getTokenizerOption = {
     noCacheTokenize?: boolean;
 };
 
-export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeModuleDirPath() }): Promise<Tokenizer> {
+export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeModuleDirPath(), noCacheTokenize: true }): Promise<Tokenizer> {
     if (_tokenizer) {
         return Promise.resolve(_tokenizer);
     }
