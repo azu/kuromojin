@@ -102,6 +102,10 @@ kuromojin pin kuromoji's version.
 It aim to dedupe kuromoji's dictionary.
 The dictionary is large and avoid to duplicated dictionary. 
 
+## Related
+
+- [azu/morpheme-match: match function that match token(形態素解析) with sentence.](https://github.com/azu/morpheme-match/tree/master)
+
 ## Tests
 
     npm test
