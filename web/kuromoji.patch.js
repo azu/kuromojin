@@ -23,7 +23,12 @@ class Deferred {
 BrowserDictionaryLoader.prototype.loadArrayBuffer = async function (url, callback) {
     const stroage = await kvsEnvStorage({
         name: "kuromoji",
-        version: 1
+        version: 2,
+        upgrade({ kvs, oldVersion, newVersion }) {
+            if (oldVersion === 1) {
+                kvs.clear();
+            }
+        }
     });
     // https://github.com/takuyaa/kuromoji.js/issues/37
     const fixedURL = url.replace("https:/", "https://");
@@ -51,10 +56,12 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = async function (url, callbac
                 return callback(response.statusText, null);
             }
             const arraybuffer = await response.arrayBuffer();
+            // decomparess gzipped dictionary
             const typedArray = await Compressor.decompress(new Uint8Array(arraybuffer), "gzip");
-            return stroage.set(fixedURL, typedArray).then(() => {
-                deferred.resolve(typedArray);
-                callback(null, typedArray);
+            const decompressedArrayBuffer = typedArray.buffer;
+            return stroage.set(fixedURL, decompressedArrayBuffer).then(() => {
+                deferred.resolve(decompressedArrayBuffer);
+                callback(null, decompressedArrayBuffer);
             });
         })
         .catch(function (exception) {
