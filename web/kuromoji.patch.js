@@ -55,10 +55,10 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = async function (url, callbac
             if (!response.ok) {
                 return callback(response.statusText, null);
             }
-            const arraybuffer = await response.arrayBuffer();
+            const rawArrayBuffer = await response.arrayBuffer();
             // decompress gzipped dictionary
-            const typedArray = await Compressor.decompress(new Uint8Array(arraybuffer), "gzip");
-            const decompressedArrayBuffer = typedArray.buffer;
+            const decompressedUint8Array = await Compressor.decompress(new Uint8Array(rawArrayBuffer), "gzip");
+            const decompressedArrayBuffer = decompressedUint8Array.buffer;
             return stroage.set(fixedURL, decompressedArrayBuffer).then(() => {
                 deferred.resolve(decompressedArrayBuffer);
                 callback(null, decompressedArrayBuffer);
