@@ -24,9 +24,9 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = async function (url, callbac
     const stroage = await kvsEnvStorage({
         name: "kuromoji",
         version: 2,
-        upgrade({ kvs, oldVersion, newVersion }) {
+        async upgrade({ kvs, oldVersion, newVersion }) {
             if (oldVersion === 1) {
-                kvs.clear();
+                await kvs.clear();
             }
         }
     });
