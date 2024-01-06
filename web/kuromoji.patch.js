@@ -56,7 +56,7 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = async function (url, callbac
                 return callback(response.statusText, null);
             }
             const arraybuffer = await response.arrayBuffer();
-            // decomparess gzipped dictionary
+            // decompress gzipped dictionary
             const typedArray = await Compressor.decompress(new Uint8Array(arraybuffer), "gzip");
             const decompressedArrayBuffer = typedArray.buffer;
             return stroage.set(fixedURL, decompressedArrayBuffer).then(() => {
