@@ -96,7 +96,7 @@ export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeMod
     return deferred.promise;
 }
 
-export function tokenize(text: string, options?: getTokenizerOption): Promise<KuromojiToken[]> {
+export function tokenize(text: string, options?: getTokenizerOption): Promise<Readonly<Readonly<KuromojiToken>[]>> {
     return getTokenizer(options).then((tokenizer) => {
         if (options?.noCacheTokenize) {
             return tokenizer.tokenizeForSentence(text);
