@@ -24,7 +24,8 @@ Provide a high level wrapper for [kuromoji.js](https://github.com/takuyaa/kuromo
 Export two API.
 
 - `getTokenizer()` return `Promise` that is resolved with kuromoji.js's `tokenizer` instance.
-- `tokenize()` return `Promise` that is resolved with analyzed tokens.
+- `tokenize()` return `Promise` that is resolved with analyzed tokens. 
+- The array and objects returned by `tokenize()` are read-only to ensure immutability and prevent modification of cached data.
 
 ```js
 import {tokenize, getTokenizer} from "kuromojin";
