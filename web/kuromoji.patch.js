@@ -23,7 +23,7 @@ class Deferred {
 BrowserDictionaryLoader.prototype.loadArrayBuffer = async function (url, callback) {
     const stroage = await kvsEnvStorage({
         name: "kuromoji",
-        version: 2,
+        version: 1,
         async upgrade({ kvs, oldVersion, newVersion }) {
             if (oldVersion === 1) {
                 await kvs.clear();
