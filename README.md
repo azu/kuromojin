@@ -103,6 +103,45 @@ kuromojin pin kuromoji's version.
 It aim to dedupe kuromoji's dictionary.
 The dictionary is large and avoid to duplicated dictionary. 
 
+## FAQ: textlint is slow / kuromoji dictionary is loaded many times
+
+kuromojin keeps the loaded dictionary and the tokenize cache per installed copy of kuromojin.
+If your `node_modules` contains multiple copies of kuromojin, each copy loads the dictionary (about 18 MB) and tokenizes the same text again.
+
+Check how many copies are installed:
+
+```sh
+npm ls kuromojin --all
+```
+
+This often happens when one old rule depends on an older major version of kuromojin (for example `kuromojin@^2`) and the other rules depend on `kuromojin@^3`.
+npm can not merge different major versions, so each `^3` rule gets its own nested copy.
+
+### Solution 1: update your rules
+
+Update the textlint rules to the latest version so that all of them depend on `kuromojin@^3`.
+npm then installs a single copy.
+
+### Solution 2: use `overrides`
+
+If some rules can not be updated, force a single version with [`overrides`](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides) in your `package.json`:
+
+```json
+{
+  "overrides": {
+    "kuromojin": "^3.0.1"
+  }
+}
+```
+
+Run `npm install` again and check `npm ls kuromojin --all`.
+
+- Yarn: use [`resolutions`](https://yarnpkg.com/configuration/manifest#resolutions)
+- pnpm: use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides)
+
+Note: kuromojin 3 uses kuromoji@0.1.2, which tokenizes some unknown words differently from kuromoji@0.1.1 used by kuromojin 2 ([takuyaa/kuromoji.js#37](https://github.com/takuyaa/kuromoji.js/issues/37)).
+The dictionary files are the same.
+
 ## Related
 
 - [azu/morpheme-match: match function that match token(形態素解析) with sentence.](https://github.com/azu/morpheme-match/tree/master)
