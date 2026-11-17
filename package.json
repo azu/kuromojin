@@ -1,6 +1,6 @@
 {
   "name": "kuromojin",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Provide a high level wrapper for kuromoji.js",
   "keywords": [
     "kuromoji",
