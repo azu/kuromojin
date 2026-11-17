@@ -77,7 +77,7 @@ export type getTokenizerOption = {
     noCacheTokenize?: boolean;
 };
 
-export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeModuleDirPath() }): Promise<Tokenizer> {
+export function getTokenizer(options?: getTokenizerOption): Promise<Tokenizer> {
     if (_tokenizer) {
         return Promise.resolve(_tokenizer);
     }
@@ -86,7 +86,11 @@ export function getTokenizer(options: getTokenizerOption = { dicPath: getNodeMod
     }
     isLoading = true;
     // load dict
-    kuromoji.builder(options).build(function (err: undefined | Error, tokenizer: Tokenizer) {
+    // resolve the default dictionary path only when the dictionary is loaded, not on every call
+    kuromoji.builder(options ?? { dicPath: getNodeModuleDirPath() }).build(function (
+        err: undefined | Error,
+        tokenizer: Tokenizer
+    ) {
         if (err) {
             return deferred.reject(err);
         }
