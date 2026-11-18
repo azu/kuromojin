@@ -3,8 +3,7 @@
 import path from "path";
 import { LRUMap } from "lru_map";
 import Deferred from "./Deferred";
-// @ts-expect-error: no type definition
-import kuromoji from "kuromoji";
+import { builder } from "./kuromoji";
 
 export type Tokenizer = {
     tokenize: (text: string) => KuromojiToken[];
@@ -59,8 +58,8 @@ const getNodeModuleDirPath = () => {
     ) {
         return maybeKuromojiWindow.kuromojin.dicPath;
     }
-    const kuromojiDir = path.dirname(require.resolve("kuromoji"));
-    return path.join(kuromojiDir, "..", "dict");
+    // the dictionary is bundled in this package: lib/../dict
+    return path.join(__dirname, "..", "dict");
 };
 
 // cache for tokenizer
@@ -87,15 +86,13 @@ export function getTokenizer(options?: getTokenizerOption): Promise<Tokenizer> {
     isLoading = true;
     // load dict
     // resolve the default dictionary path only when the dictionary is loaded, not on every call
-    kuromoji.builder(options ?? { dicPath: getNodeModuleDirPath() }).build(function (
-        err: undefined | Error,
-        tokenizer: Tokenizer
-    ) {
+    builder(options ?? { dicPath: getNodeModuleDirPath() }).build(function (err, tokenizer) {
         if (err) {
             return deferred.reject(err);
         }
-        _tokenizer = tokenizer;
-        deferred.resolve(tokenizer);
+        // KuromojiToken declares reading and pronunciation as string, but unknown words do not have them (same as kuromoji.js)
+        _tokenizer = tokenizer as unknown as Tokenizer;
+        deferred.resolve(_tokenizer);
     });
     return deferred.promise;
 }
