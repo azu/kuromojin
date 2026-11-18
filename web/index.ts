@@ -1,7 +1,7 @@
-import "./kuromoji.patch.js";
 import { getTokenizer } from "../src/index";
 
-const DICT_URL = "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict";
+// public/dict is a copy of dict/ (npm run cp-public). ?dict=<path> loads another dictionary directory.
+const DICT_URL = new URL(new URLSearchParams(location.search).get("dict") ?? "./dict/", location.href).href;
 export const loadTokenizer = async () => {
     return await getTokenizer({
         dicPath: DICT_URL
@@ -12,8 +12,12 @@ export const run = async () => {
     const textElement = document.querySelector("#text") as HTMLTextAreaElement;
     const jsonElement = document.querySelector("#json") as HTMLTextAreaElement;
     loadingElement.textContent = "🤖Loading dictionary... Require DecompressionStream support.";
+    const start = performance.now();
     const tokenizer = await loadTokenizer();
-    loadingElement.textContent = "🤖Complete loading!";
+    const loadTime = performance.now() - start;
+    // for debugging in the console
+    Object.assign(window, { kuromojinTokenizer: tokenizer, kuromojinLoadTime: loadTime });
+    loadingElement.textContent = `🤖Complete loading! (${Math.round(loadTime)} ms)`;
     setTimeout(() => {
         loadingElement.textContent = "🤖You can tokenize text!";
     }, 1000);
