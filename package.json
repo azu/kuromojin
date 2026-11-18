@@ -20,7 +20,8 @@
   "files": [
     "lib/",
     "src/",
-    "dict/"
+    "dict/*.gz",
+    "dict/NOTICE.md"
   ],
   "types": "lib/index.d.ts",
   "directories": {
