@@ -1,0 +1,17 @@
+# The changes of the dictionary versions of kuromojin.
+# `yarn run build:dict` reads this file and writes dict/kuromojin.dict and dict/DICTIONARY_VERSIONS.md.
+#
+# A line is one change:
+#   <date>,add,<entry>               The version of the date adds the entry.
+#   <date>,remove,<number>,<entry>   The version of the date removes the entry with the number.
+# <date> is written as YYYY-MM-DD. <entry> is written as in the source files of IPADIC:
+#   surface form,left id,right id,cost,pos,pos detail 1,pos detail 2,pos detail 3,conjugated type,conjugated form,base form,reading,pronunciation
+# `yarn run build:dict --entries <word>` prints the entries of a word with their numbers.
+#
+# Rules:
+# - A version changes a word as a `remove` line and an `add` line with the same date.
+# - Lines are in the order of their dates. Add new lines at the end, with a date later than every date above.
+# - Never edit or delete the lines of a released version. Correct a mistake with a later version.
+#
+# Example:
+#   2027-04-01,add,令和,1288,1288,5904,名詞,固有名詞,一般,*,*,*,令和,レイワ,レイワ
