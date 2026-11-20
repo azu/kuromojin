@@ -17,6 +17,9 @@ export const isNode = (): boolean =>
 
 // The modules of Node.js are required only when the code runs in Node.js.
 // The "browser" field of package.json tells a bundler to leave them out of a build for a browser.
+// The names have no `node:` prefix: webpack 5 fails a build for a browser on a name with the prefix,
+// also when the "browser" field has the name.
+// Node.js has DecompressionStream too, but its zlib module decompresses the dictionary several times faster.
 const nodePlatform = (): Platform => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fs = require("fs") as typeof import("fs");
