@@ -3,10 +3,10 @@
 import { LRUMap } from "lru_map";
 import { Analyzer, splitByPunctuation } from "./analyzer/Analyzer";
 import type { Dictionary } from "./analyzer/Dictionary";
+import type { DictionaryVersion } from "./analyzer/DictionaryVersion";
 import {
     createDefaultView,
     createDictionaryView,
-    DictionaryVersion,
     DictionaryVersions,
     DictionaryView,
     resolveDictionaryVersion
@@ -38,6 +38,7 @@ export type getTokenizerOption = {
     /**
      * The dictionary version of the call, as a date written as YYYY-MM-DD.
      * The call gets the dictionary with the changes of every version up to the date.
+     * The type has the dates of the versions of the dictionary of the package.
      * Default: the default dictionary, which does not change within a major version of kuromojin.
      */
     dictionaryVersion?: DictionaryVersion;

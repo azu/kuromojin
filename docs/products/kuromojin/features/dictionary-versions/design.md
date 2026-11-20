@@ -107,7 +107,7 @@ An added entry is written in the form of the IPADIC source files, so that a revi
 The script that builds the dictionary file reads this file.
 It checks that the ids exist in the costs between parts of speech and that a removed entry exists.
 It compares the digest of each version with the digest in the existing dictionary file, and it stops when a version of that file is changed or missing.
-It then builds the dictionary file with the entries of all versions, and it writes the list of versions for readers from the same lines.
+It then builds the dictionary file with the entries of all versions, and it writes the list of versions for readers and the type `DictionaryVersion` from the same lines.
 The list for readers is a Markdown file in the `dict` directory, next to the dictionary file, so it is published with the npm package.
 
 ## Architecture and sequence diagrams
@@ -158,7 +158,7 @@ erDiagram
 ## APIs and interfaces
 
 - `getTokenizerOption.dictionaryVersion?: DictionaryVersion` is the dictionary version of a call of `tokenize` or `getTokenizer`.
-- `DictionaryVersion` is the type of a date written as `YYYY-MM-DD`: a string of three numbers with `-` between them. The type checks only this form, and a call checks the rest.
+- `DictionaryVersion` is the type of the value: the union of the dates of the versions of the dictionary of the package. A call still checks the value, because a caller without types can pass any value and a dictionary from a dictionary path can have other versions.
 - The table of the dictionary file lists the versions: for each one, its date, its number of entries, the numbers of the entries that it removes, and the digest of its changes.
 - The npm package publishes the list of versions for readers in the `dict` directory.
 

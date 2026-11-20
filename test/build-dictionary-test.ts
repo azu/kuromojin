@@ -9,6 +9,7 @@ import {
     readKuromojiFiles,
     readDictionaryTable,
     renderVersionList,
+    renderVersionType,
     toIpadicLine
 } from "../scripts/buildDictionary";
 import {
@@ -43,6 +44,13 @@ describe("build of the dictionary", function () {
             const source = fs.readFileSync(path.join(__dirname, "..", "dict-source", "versions.csv"), "utf8");
             const list = fs.readFileSync(path.join(__dirname, "..", "dict", "DICTIONARY_VERSIONS.md"), "utf8");
             assert.strictEqual(list, renderVersionList(BASE_VERSION, parse(source), baseEntries));
+        });
+        it("has a type of the dates of its versions that is written from the same source", function () {
+            const source = fs.readFileSync(path.join(__dirname, "..", "dict-source", "versions.csv"), "utf8");
+            const type = fs.readFileSync(path.join(__dirname, "..", "src", "analyzer", "DictionaryVersion.ts"), "utf8");
+            assert.strictEqual(type, renderVersionType(BASE_VERSION, parse(source)));
+            const stored = readDictionaryTable(fs.readFileSync(packageDictionaryFile)).versions;
+            for (const { date } of stored) assert.ok(type.includes(JSON.stringify(date)), date);
         });
         it("is smaller than the dictionary of kuromoji.js", function () {
             const kuromojiSize = fs
@@ -150,6 +158,26 @@ describe("build of the dictionary", function () {
             assert.throws(
                 () => checkReleasedVersions(released, versionsOf("removed.dict", removedMore)),
                 /2027-10-01.*is changed or missing/
+            );
+        });
+        it("writes the type as the union of the dates of the versions", function () {
+            const versions = parse(
+                [`2027-04-01,add,${reiwa}`, `2027-10-01,remove,${heisei.number},${toIpadicLine(heisei)}`].join("\n")
+            );
+            assert.ok(
+                renderVersionType(BASE_VERSION, versions).includes(
+                    'export type DictionaryVersion = "2007-08-01" | "2027-04-01" | "2027-10-01";\n'
+                )
+            );
+            const many = Array.from({ length: 12 }, (_, month) => ({
+                date: `2028-${String(month + 1).padStart(2, "0")}-01`,
+                added: [],
+                removed: []
+            }));
+            assert.ok(
+                renderVersionType(BASE_VERSION, many).includes(
+                    'export type DictionaryVersion =\n    | "2007-08-01"\n    | "2028-01-01"\n'
+                )
             );
         });
         it("writes the list of versions with every added and removed word", function () {

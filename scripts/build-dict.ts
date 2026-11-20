@@ -1,5 +1,5 @@
 // LICENSE : MIT
-// Build dict/kuromojin.dict and dict/DICTIONARY_VERSIONS.md.
+// Build dict/kuromojin.dict, dict/DICTIONARY_VERSIONS.md, and src/analyzer/DictionaryVersion.ts.
 //
 // usage:
 //   ts-node scripts/build-dict.ts                    build the dictionary of the package
@@ -16,6 +16,7 @@ import {
     readKuromojiFiles,
     readDictionaryTable,
     renderVersionList,
+    renderVersionType,
     toIpadicLine
 } from "./buildDictionary";
 
@@ -25,6 +26,7 @@ const root = path.join(__dirname, "..");
 const kuromojiDirectory = path.join(path.dirname(require.resolve("kuromoji/package.json")), "dict");
 const dictionaryFile = path.join(root, "dict", "kuromojin.dict");
 const versionListFile = path.join(root, "dict", "DICTIONARY_VERSIONS.md");
+const versionTypeFile = path.join(root, "src", "analyzer", "DictionaryVersion.ts");
 const versionsSource = path.join(root, "dict-source", "versions.csv");
 
 const args = process.argv.slice(2);
@@ -53,6 +55,7 @@ if (entriesIndex !== -1) {
     }
     fs.writeFileSync(dictionaryFile, dictionary);
     fs.writeFileSync(versionListFile, renderVersionList(BASE_VERSION, versions, baseEntries));
+    fs.writeFileSync(versionTypeFile, renderVersionType(BASE_VERSION, versions));
     console.log(
         `${path.relative(root, dictionaryFile)}: ${dictionary.length} bytes, ` +
             `versions: ${[BASE_VERSION, ...versions.map((version) => version.date)].join(", ")}`

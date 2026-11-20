@@ -576,6 +576,30 @@ export function checkReleasedVersions(
 /**
  * The list of the dictionary versions for readers, as Markdown.
  */
+/**
+ * The TypeScript source of the type of the dates that a caller can pass as `dictionaryVersion`:
+ * the dates of the versions of the dictionary of the package.
+ * The lines are as Prettier writes them.
+ */
+export function renderVersionType(baseVersion: string, versions: VersionChanges[]): string {
+    const dates = [baseVersion, ...versions.map((version) => version.date)].map((date) => JSON.stringify(date));
+    const oneLine = `export type DictionaryVersion = ${dates.join(" | ")};`;
+    const declaration =
+        oneLine.length <= 120
+            ? oneLine
+            : `export type DictionaryVersion =\n${dates.map((date) => `    | ${date}`).join("\n")};`;
+    return [
+        "// LICENSE : MIT",
+        "// `scripts/build-dict.ts` writes this file from `dict-source/versions.csv`, so do not edit it.",
+        "/**",
+        " * A dictionary version of the dictionary of the package: the date of the version, written as YYYY-MM-DD.",
+        " * `dict/DICTIONARY_VERSIONS.md` lists the changes of each version.",
+        " */",
+        declaration,
+        ""
+    ].join("\n");
+}
+
 export function renderVersionList(baseVersion: string, versions: VersionChanges[], baseEntries: BaseEntry[]): string {
     const lines = [
         "# Dictionary versions",

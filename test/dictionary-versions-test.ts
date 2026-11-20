@@ -13,6 +13,11 @@ import {
 } from "./helpers";
 
 const surfaces = (tokens: readonly KuromojiToken[]) => tokens.map((token) => token.surface_form);
+/**
+ * A version of the dictionary for tests.
+ * The type DictionaryVersion has only the versions of the dictionary of the package.
+ */
+const version = (date: string) => date as DictionaryVersion;
 
 // The scenarios of docs/products/kuromojin/features/dictionary-versions/requirements.md
 describe("dictionary versions", function () {
@@ -31,7 +36,7 @@ describe("dictionary versions", function () {
     context("use newer words in a rule", function () {
         it("has the words of the version in the tokens when a call names a version", async function () {
             await withTestDictionary(async () => {
-                const tokens = await kuromojin.tokenize("令和元年", { dictionaryVersion: "2027-04-01" });
+                const tokens = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") });
                 assert.deepStrictEqual(surfaces(tokens), ["令和", "元年"]);
                 assert.strictEqual(tokens[0].word_type, "KNOWN");
                 assert.strictEqual(tokens[0].reading, "レイワ");
@@ -46,7 +51,9 @@ describe("dictionary versions", function () {
         });
         it("gives the changes up to the date when a call names a date between two versions", async function () {
             await withTestDictionary(async () => {
-                const tokens = await kuromojin.tokenize("令和にスマホを使う", { dictionaryVersion: "2027-06-15" });
+                const tokens = await kuromojin.tokenize("令和にスマホを使う", {
+                    dictionaryVersion: version("2027-06-15")
+                });
                 const defaultTokens = await kuromojin.tokenize("スマホを使う");
                 const reiwa = tokens.find((token) => token.surface_form === "令和");
                 const sumaho = tokens.find((token) => token.surface_form === "スマホ");
@@ -58,7 +65,9 @@ describe("dictionary versions", function () {
         });
         it("gives the changes of all versions when a call names the newest version", async function () {
             await withTestDictionary(async () => {
-                const tokens = await kuromojin.tokenize("令和にスマホを使う", { dictionaryVersion: "2027-10-01" });
+                const tokens = await kuromojin.tokenize("令和にスマホを使う", {
+                    dictionaryVersion: version("2027-10-01")
+                });
                 assert.deepStrictEqual(surfaces(tokens), ["令和", "に", "スマホ", "を", "使う"]);
                 assert.deepStrictEqual(
                     tokens.map((token) => token.word_type),
@@ -83,15 +92,19 @@ describe("dictionary versions", function () {
             const text = "令和にスマホを使う。令和元年は平成31年である。";
             const older = writeTestDictionary("older.dict", testVersions.slice(0, 1));
             const before = await withSettings({ env: older }, () =>
-                freshKuromojin().tokenize(text, { dictionaryVersion: "2027-04-01" })
+                freshKuromojin().tokenize(text, { dictionaryVersion: version("2027-04-01") })
             );
-            const after = await withTestDictionary(() => kuromojin.tokenize(text, { dictionaryVersion: "2027-04-01" }));
+            const after = await withTestDictionary(() =>
+                kuromojin.tokenize(text, { dictionaryVersion: version("2027-04-01") })
+            );
             assert.deepStrictEqual(after, before);
             assert.ok(before.some((token) => token.surface_form === "令和" && token.word_id > 0));
         });
         it("gives every added entry a word_id that no other entry has", async function () {
             await withTestDictionary(async () => {
-                const tokens = await kuromojin.tokenize("令和にスマホを使う", { dictionaryVersion: "2027-10-01" });
+                const tokens = await kuromojin.tokenize("令和にスマホを使う", {
+                    dictionaryVersion: version("2027-10-01")
+                });
                 const ids = tokens.map((token) => token.word_id);
                 assert.strictEqual(new Set(ids).size, ids.length);
                 // the numbers of added entries come after the numbers of the base dictionary: 392,126 entries
@@ -108,7 +121,7 @@ describe("dictionary versions", function () {
                 const reads = await recordReads(async () => {
                     results = await Promise.all([
                         kuromojin.tokenize("令和元年"),
-                        kuromojin.tokenize("令和元年", { dictionaryVersion: "2027-04-01" }),
+                        kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") }),
                         kuromojin.tokenize("令和元年")
                     ]);
                 });
@@ -120,16 +133,16 @@ describe("dictionary versions", function () {
         });
         it("returns the same array for the same text and a date that means the same version", async function () {
             await withTestDictionary(async () => {
-                const first = await kuromojin.tokenize("令和元年", { dictionaryVersion: "2027-04-01" });
-                const second = await kuromojin.tokenize("令和元年", { dictionaryVersion: "2027-06-15" });
+                const first = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") });
+                const second = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-06-15") });
                 assert.strictEqual(second, first);
             });
         });
         it("resolves with one tokenizer for each version", async function () {
             await withTestDictionary(async () => {
-                const first = await kuromojin.getTokenizer({ dictionaryVersion: "2027-04-01" });
-                const second = await kuromojin.getTokenizer({ dictionaryVersion: "2027-04-01" });
-                const sameVersion = await kuromojin.getTokenizer({ dictionaryVersion: "2027-09-30" });
+                const first = await kuromojin.getTokenizer({ dictionaryVersion: version("2027-04-01") });
+                const second = await kuromojin.getTokenizer({ dictionaryVersion: version("2027-04-01") });
+                const sameVersion = await kuromojin.getTokenizer({ dictionaryVersion: version("2027-09-30") });
                 const withoutVersion = await kuromojin.getTokenizer();
                 assert.strictEqual(second, first);
                 assert.strictEqual(sameVersion, first);
@@ -145,10 +158,10 @@ describe("dictionary versions", function () {
         it("rejects a date later than the newest version, and names both dates", async function () {
             await withTestDictionary(async () => {
                 await assert.rejects(
-                    kuromojin.tokenize("令和元年", { dictionaryVersion: "2028-01-01" }),
+                    kuromojin.tokenize("令和元年", { dictionaryVersion: version("2028-01-01") }),
                     /"2028-01-01" is later than the newest version "2027-10-01"/
                 );
-                const later = await kuromojin.tokenize("令和元年", { dictionaryVersion: "2027-10-01" });
+                const later = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-10-01") });
                 assert.deepStrictEqual(surfaces(later), ["令和", "元年"]);
             });
         });
@@ -168,21 +181,21 @@ describe("dictionary versions", function () {
                 }
             });
         });
-        it("has a type for the form of a date", function () {
-            const date: getTokenizerOption = { dictionaryVersion: "2027-04-01" };
-            // @ts-expect-error the type takes only three numbers with "-" between them
-            const word: getTokenizerOption = { dictionaryVersion: "latest" };
+        it("has a type with the dates of the versions of the dictionary of the package", function () {
+            const base: getTokenizerOption = { dictionaryVersion: "2007-08-01" };
+            // @ts-expect-error the dictionary of the package has no version with this date
+            const between: getTokenizerOption = { dictionaryVersion: "2007-08-02" };
             // @ts-expect-error
-            const slashes: getTokenizerOption = { dictionaryVersion: "2027/04/01" };
+            const word: getTokenizerOption = { dictionaryVersion: "latest" };
             assert.deepStrictEqual(
-                [date, word, slashes].map((option) => typeof option.dictionaryVersion),
+                [base, between, word].map((option) => typeof option.dictionaryVersion),
                 ["string", "string", "string"]
             );
         });
         it("rejects a date earlier than the base dictionary", async function () {
             await withTestDictionary(async () => {
                 await assert.rejects(
-                    kuromojin.tokenize("令和元年", { dictionaryVersion: "2007-07-31" }),
+                    kuromojin.tokenize("令和元年", { dictionaryVersion: version("2007-07-31") }),
                     /earlier than the base dictionary "2007-08-01"/
                 );
             });
@@ -190,7 +203,7 @@ describe("dictionary versions", function () {
         it("rejects a version with a dictionary of kuromoji.js, and a call without a version resolves", async function () {
             await withSettings({ env: kuromojiDictionaryDirectory }, async () => {
                 await assert.rejects(
-                    kuromojin.tokenize("令和元年", { dictionaryVersion: "2027-04-01" }),
+                    kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") }),
                     /a dictionary of kuromoji\.js has no versions/
                 );
                 assert.deepStrictEqual(surfaces(await kuromojin.tokenize("令和元年")), ["令", "和", "元年"]);
@@ -213,13 +226,15 @@ describe("dictionary versions", function () {
             ]);
             await withSettings({ env: file }, async () => {
                 const fresh = freshKuromojin();
-                const removed = await fresh.tokenize("仕様について書く", { dictionaryVersion: "2027-04-01" });
+                const removed = await fresh.tokenize("仕様について書く", { dictionaryVersion: version("2027-04-01") });
                 assert.deepStrictEqual(surfaces(removed), ["仕様", "に", "つい", "て", "書く"]);
                 // a changed word is a removed entry and an added entry
-                const changed = await fresh.tokenize("仕様について書く", { dictionaryVersion: "2027-10-01" });
+                const changed = await fresh.tokenize("仕様について書く", { dictionaryVersion: version("2027-10-01") });
                 assert.deepStrictEqual(surfaces(changed), surfaces(base));
                 assert.deepStrictEqual(changed[1], { ...entry, word_id: 3921260, reading: "ニツキ" });
-                const removedAgain = await fresh.tokenize("仕様について書く", { dictionaryVersion: "2028-04-01" });
+                const removedAgain = await fresh.tokenize("仕様について書く", {
+                    dictionaryVersion: version("2028-04-01")
+                });
                 assert.deepStrictEqual(removedAgain, removed);
                 assert.deepStrictEqual(await fresh.tokenize("仕様について書く"), base);
             });
@@ -237,9 +252,9 @@ describe("dictionary versions", function () {
             ]);
             await withSettings({ env: file }, async () => {
                 const fresh = freshKuromojin();
-                const [same] = await fresh.tokenize("黒文字", { dictionaryVersion: "2027-04-01" });
+                const [same] = await fresh.tokenize("黒文字", { dictionaryVersion: version("2027-04-01") });
                 assert.strictEqual(same.reading, "クロモジ");
-                const [cheaper] = await fresh.tokenize("黒文字", { dictionaryVersion: "2027-10-01" });
+                const [cheaper] = await fresh.tokenize("黒文字", { dictionaryVersion: version("2027-10-01") });
                 assert.strictEqual(cheaper.reading, "クロモンジ");
             });
         });
@@ -253,7 +268,7 @@ describe("dictionary versions", function () {
                 const fresh = freshKuromojin();
                 const [base] = await fresh.tokenize("鱚");
                 assert.strictEqual(base.word_type, "KNOWN");
-                const tokens = await fresh.tokenize("鱚", { dictionaryVersion: "2027-04-01" });
+                const tokens = await fresh.tokenize("鱚", { dictionaryVersion: version("2027-04-01") });
                 assert.strictEqual(tokens.length, 1);
                 assert.strictEqual(tokens[0].surface_form, "鱚");
                 assert.strictEqual(tokens[0].word_type, "UNKNOWN");
@@ -269,7 +284,7 @@ describe("dictionary versions", function () {
             ]);
             await withSettings({ env: file }, async () => {
                 const fresh = freshKuromojin();
-                const tokens = await fresh.tokenize("🍣を食べる", { dictionaryVersion: "2027-04-01" });
+                const tokens = await fresh.tokenize("🍣を食べる", { dictionaryVersion: version("2027-04-01") });
                 assert.deepStrictEqual(surfaces(tokens), ["🍣", "を", "食べる"]);
                 assert.strictEqual(tokens[0].word_type, "KNOWN");
                 assert.deepStrictEqual(

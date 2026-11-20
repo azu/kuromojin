@@ -67,7 +67,7 @@ tokenize(text).then((tokens) => {
 ### Options
 
 - `dicPath?: string`: the [dictionary path](#dictionary). It is used only by the call that starts loading the dictionary.
-- `dictionaryVersion?: DictionaryVersion`: the [dictionary version](#dictionary-versions) of the call, as a date written as `YYYY-MM-DD`. The type `DictionaryVersion` is a string of this form.
+- `dictionaryVersion?: DictionaryVersion`: the [dictionary version](#dictionary-versions) of the call, as a date written as `YYYY-MM-DD`. The type `DictionaryVersion` is the union of the dates of the versions.
 - `noCacheTokenize?: boolean`: `tokenize()` analyzes the text again and does not remember the tokens. Default: `false`
 
 ## Dictionary
@@ -161,7 +161,8 @@ const tokens = await tokenize(text, { dictionaryVersion: "2007-08-01" });
 
 [dict/DICTIONARY_VERSIONS.md](dict/DICTIONARY_VERSIONS.md) lists the versions and their changes.
 
-- A date between two versions means the earlier one.
+- The type `DictionaryVersion` has the dates of the versions of the dictionary of the package, so TypeScript takes only these dates.
+- At runtime, a date between two versions means the earlier one.
 - A date later than the newest version of the installed kuromojin is rejected, because the installed kuromojin does not have the words that the caller expects.
 - `dictionaryVersion` is rejected with a dictionary of kuromoji.js, which has no versions.
 - Callers with different versions share one loaded dictionary.
