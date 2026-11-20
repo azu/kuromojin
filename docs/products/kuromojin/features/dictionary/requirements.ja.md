@@ -35,7 +35,7 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 シナリオ：Node.js で辞書のパスを指定しないとき、パッケージの辞書が使われる
 
-- Given: npm でインストールした kuromojin があり、`dicPath` オプション、`KUROMOJIN_DIC_PATH`、`window.kuromojin` のどれもない
+- Given: npm でインストールした kuromojin があり、`dicPath` オプション、`KUROMOJIN_DIC_PATH`、`globalThis.kuromojin` のどれもない
 - When: `getTokenizer` を呼ぶ
 - Then: Promise は、kuromojin のパッケージの `dict` ディレクトリにある辞書のファイルを使うトークナイザーで解決する
 
@@ -71,27 +71,33 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 シナリオ：ページが辞書の URL をグローバルに設定したとき、すべてのモジュールがそれを使う
 
-- Given: 辞書が読み込まれる前に `window.kuromojin = { dicPath: "https://example.com/dict" }` を設定するページ
+- Given: 辞書が読み込まれる前に `window.kuromojin = { dicPath: "https://example.com/dict/kuromojin.dict" }` を設定するページ
 - When: そのページのどれかのモジュールが、オプションなしで `getTokenizer` または `tokenize` を呼ぶ
-- Then: 辞書は `https://example.com/dict/` に要求される
+- Then: 辞書は `https://example.com/dict/kuromojin.dict` に要求される
+
+シナリオ：ワーカーが辞書の URL をグローバルに設定したとき、ワーカーのモジュールがそれを使う
+
+- Given: 辞書が読み込まれる前に `globalThis.kuromojin = { dicPath: "https://example.com/dict/kuromojin.dict" }` を設定する Web Worker
+- When: そのワーカーのモジュールが、オプションなしで `getTokenizer` を呼ぶ
+- Then: 辞書は `https://example.com/dict/kuromojin.dict` に要求される
 
 シナリオ：ブラウザがパッケージの辞書を読み込むとき、1 つのファイルをダウンロードする
 
-- Given: 辞書のパスが、kuromojin のパッケージの `dict` ディレクトリを配信する URL であるページ
+- Given: 辞書のパスが、kuromojin のパッケージの `kuromojin.dict` ファイルの URL であるページ
 - When: `getTokenizer` を呼ぶ
-- Then: ページはその URL に `kuromojin.dict` を要求し、ほかの辞書のファイルは要求しない。Promise はトークナイザーで解決する
+- Then: ページはその URL を要求し、ほかの辞書のファイルは要求しない。Promise はトークナイザーで解決する
 
 シナリオ：最初の呼び出しに辞書のパスがあるとき、辞書はそこから読み込まれる
 
 - Given: 辞書がまだ読み込まれていない
-- When: 辞書のファイルがあるディレクトリのパスで `getTokenizer({ dicPath })` を呼ぶ
-- Then: `KUROMOJIN_DIC_PATH` が別のディレクトリを指していても、辞書はそのディレクトリから読み込まれる
+- When: 辞書のパスで `getTokenizer({ dicPath })` を呼ぶ
+- Then: `KUROMOJIN_DIC_PATH` が別の辞書を指していても、辞書はそのパスから読み込まれる
 
 シナリオ：環境変数が設定されているとき、辞書はそこから読み込まれる
 
-- Given: `KUROMOJIN_DIC_PATH` に辞書のファイルがあるディレクトリのパスが設定され、辞書がまだ読み込まれていない
+- Given: `KUROMOJIN_DIC_PATH` に辞書のパスが設定され、辞書がまだ読み込まれていない
 - When: オプションなしで `getTokenizer` を呼ぶ
-- Then: 辞書はそのディレクトリから読み込まれる
+- Then: 辞書はそのパスから読み込まれる
 
 ### kuromoji.js の辞書を使い続ける
 
@@ -99,11 +105,17 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 **受け入れ条件：**
 
-シナリオ：辞書のパスに kuromoji.js の辞書があるとき、その辞書が読み込まれる
+シナリオ：辞書のパスが kuromoji.js の辞書のディレクトリのとき、その辞書が読み込まれる
 
-- Given: kuromoji.js 0.1.2 の `dict` ディレクトリにある 12 個の `*.dat.gz` ファイルを持つ辞書のパスがあり、辞書がまだ読み込まれていない
+- Given: 辞書のパスが、12 個の `*.dat.gz` ファイルを持つ kuromoji.js 0.1.2 の `dict` ディレクトリを指し、辞書がまだ読み込まれていない
 - When: テキスト `黒文字` で `tokenize` を呼ぶ
 - Then: Promise は、パッケージの辞書を使うときと同じトークンで解決する
+
+シナリオ：ブラウザが kuromoji.js の辞書を読み込むとき、その辞書のファイルだけを要求する
+
+- Given: 辞書のパスが、kuromoji.js 0.1.2 の `dict` ディレクトリを配信する URL であるページ
+- When: `getTokenizer` を呼ぶ
+- Then: ページは 12 個の `*.dat.gz` ファイルを要求し、ほかのファイルは要求しない。Promise はトークナイザーで解決する
 
 ### 読み込めない辞書に気づく
 
@@ -137,9 +149,9 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 **概要：** kuromojin は、`getTokenizer` または `tokenize` の最初の呼び出しが読み込みを始めるときに、辞書のパスを決める。
 
-**入力：** その呼び出しの `options`、環境変数 `KUROMOJIN_DIC_PATH`、`window.kuromojin.dicPath`。
+**入力：** その呼び出しの `options`、環境変数 `KUROMOJIN_DIC_PATH`、`globalThis.kuromojin.dicPath`。
 
-**出力：** 辞書のファイルを読み込むディレクトリまたは URL。
+**出力：** 辞書を読み込むファイル、ディレクトリ、または URL。
 
 #### 適用条件
 
@@ -147,14 +159,17 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 1. 呼び出しの `options` の `dicPath`
 2. 環境変数 `KUROMOJIN_DIC_PATH`
-3. `window.kuromojin.dicPath`
-4. kuromojin のパッケージの `dict` ディレクトリ
+3. `globalThis.kuromojin.dicPath`
+4. kuromojin のパッケージの `dict` ディレクトリにある `kuromojin.dict` ファイル
 
 設定されていない指定は飛ばします。そのため、`dicPath` のない `options`（たとえば `noCacheTokenize` だけの `options`）のときは、残りの 3 つから選びます。
 
+3 番目は、環境のグローバルオブジェクトから読みます。そのため、ページ、ワーカー、Node.js のどれでも使えます。
+ページではグローバルオブジェクトが `window` なので、`window.kuromojin.dicPath` は同じ設定です。
+
 4 番目には Node.js のファイルシステムが必要です。
-ブラウザでは、`options` か `window.kuromojin.dicPath` で辞書のパスを指定しなければなりません。
-`dict` ディレクトリは npm パッケージで公開されるので、パッケージのファイルを配信するサーバーをそのパスにできます。
+ブラウザでは、`options` か `globalThis.kuromojin.dicPath` で辞書のパスを指定しなければなりません。
+`dict` ディレクトリは npm パッケージで公開されるので、パッケージのファイルを配信するサーバーにあるそのファイルの URL を、辞書のパスにできます。
 
 #### 例外時の挙動
 
@@ -176,13 +191,14 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 パッケージの辞書は、kuromoji.js 0.1.2 の IPADIC の辞書の単語を、同じ品詞、読み、コストで持ちます。
 辞書は kuromojin の形式で保存されています。この形式は、ダウンロードが小さく、読み込みが速くなるように作られています。
-この形式の辞書は、辞書のパスにある `kuromojin.dict` という 1 つのファイルです。
+この形式の辞書は 1 つのファイルで、パッケージのファイルの名前は `kuromojin.dict` です。
 このファイルは辞書のすべてのデータを持ち、形式のバージョンを示します。
+`.dict` で終わる辞書のパスは、このようなファイルを指します。
 
 ##### kuromoji.js の辞書
 
-辞書のパスに `kuromojin.dict` がないときは、kuromoji.js の形式の辞書を置くことができます。`base.dat.gz`、`check.dat.gz`、`tid.dat.gz`、`tid_pos.dat.gz`、`tid_map.dat.gz`、`cc.dat.gz`、`unk.dat.gz`、`unk_pos.dat.gz`、`unk_map.dat.gz`、`unk_char.dat.gz`、`unk_compat.dat.gz`、`unk_invoke.dat.gz` の 12 個のファイルです。
-kuromojin は 2 つの形式を自分で見分けるので、呼び出し元は形式を指定しません。
+`.dict` で終わらない辞書のパスは、kuromoji.js の形式の辞書を持つディレクトリまたは URL を指します。`base.dat.gz`、`check.dat.gz`、`tid.dat.gz`、`tid_pos.dat.gz`、`tid_map.dat.gz`、`cc.dat.gz`、`unk.dat.gz`、`unk_pos.dat.gz`、`unk_map.dat.gz`、`unk_char.dat.gz`、`unk_compat.dat.gz`、`unk_invoke.dat.gz` の 12 個のファイルです。
+kuromojin は、辞書のパスの終わりで 2 つの形式を見分けます。そのため、呼び出し元は形式を指定せず、kuromojin はその形式のファイルだけを読みます。
 このような辞書は、利用者が kuromoji.js のツールで作った辞書のように、パッケージの辞書とは違う単語を持つことがあります。そのときのトークンは、その辞書に従います。
 
 ##### Node.js とブラウザ
@@ -201,7 +217,7 @@ Node.js では、辞書を辞書のパスからファイルシステムで読み
 ##### 読み込めない辞書
 
 ファイルを読めないとき、その呼び出しの Promise は読み込みのエラーで拒否されます。
-`kuromojin.dict` が、インストールされた kuromojin の知らない形式のバージョンを示すとき、または kuromojin の辞書ではないとき、Promise はそのことを伝えるエラーで拒否されます。
+パスが `.dict` で終わるファイルが、インストールされた kuromojin の知らない形式のバージョンを示すとき、または kuromojin の辞書ではないとき、Promise はそのことを伝えるエラーで拒否されます。
 kuromojin は読み込みをやり直しません。そのプロセスのその後の呼び出しは、別の辞書のパスを指定しても、すべて同じエラーで拒否されます。
 
 ## データ要件

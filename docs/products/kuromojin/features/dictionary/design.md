@@ -28,8 +28,9 @@ The dictionary of the package is one file in a format of kuromojin, whose goal i
 ### Dictionary path
 
 The path is decided only when a load starts, not on every call.
-kuromojin looks at `dicPath` of the `options` of the first call, then at `KUROMOJIN_DIC_PATH`, then at `window.kuromojin.dicPath`.
-When none of them is set, it uses the `dict` directory next to its own code, which it finds from the location of its module in Node.js.
+kuromojin looks at `dicPath` of the `options` of the first call, then at `KUROMOJIN_DIC_PATH`, then at `globalThis.kuromojin.dicPath`.
+It reads the global setting through `globalThis`, because a worker and Node.js have no `window`, and `globalThis` is `window` in a page.
+When none of them is set, it uses the file `kuromojin.dict` in the `dict` directory next to its own code, which it finds from the location of its module in Node.js.
 
 ### Loading once
 
@@ -51,9 +52,9 @@ kuromojin chooses the pair when a load starts, by whether it runs in Node.js.
 
 ### Format of the dictionary
 
-The load first asks for `kuromojin.dict` in the dictionary path.
-When the file is there, the dictionary is in the format of kuromojin.
-When the file is not there, the dictionary is read as the twelve files of kuromoji.js, which are requested at the same time.
+The end of the dictionary path tells the format, so the load reads only the files of one format and never tries the other one.
+A path that ends with `.dict` is the file of a dictionary in the format of kuromojin.
+Any other path is a directory or a URL with the twelve files of kuromoji.js, which are requested at the same time.
 A server can remove the gzip compression of a `.gz` file before the browser sees it, so each of the twelve files is decompressed only when its bytes start with the gzip signature.
 
 Both formats are turned into the same tables, so the tokenizer does not know which one was loaded.
@@ -103,16 +104,34 @@ The converted file is kept in the repository in the `dict` directory, together w
 
 ## Architecture and sequence diagrams
 
-No diagram is needed. A load is one sequence behind one Promise: decide the path, read the file, check its start, decompress its parts, and build the tables.
+A load is one sequence behind one Promise, with one branch for each format of the dictionary.
+
+```mermaid
+flowchart TD
+    call["First call of getTokenizer or tokenize"] --> path["Decide the dictionary path"]
+    path --> ending{"Does the path end with .dict?"}
+    ending -- Yes --> file["Read the one file"]
+    file --> start{"Are the signature and the version known?"}
+    start -- No --> reject["Reject the Promise with an error"]
+    start -- Yes --> parts["Decompress the parts at the same time"]
+    parts --> own["Build the tables and the trie of kuromojin"]
+    ending -- No --> twelve["Read the twelve files of kuromoji.js at the same time"]
+    twelve --> gunzip["Decompress each file that starts with the gzip signature"]
+    gunzip --> other["Build the tables and the double-array trie of kuromoji.js"]
+    own --> tokenizer["Resolve the Promise with the tokenizer"]
+    other --> tokenizer
+```
+
+A file that cannot be read rejects the Promise in either branch.
 
 ## Data model and ER diagrams
 
 The dictionary in memory is four tables.
 
-- The trie, from a text position to the words that start there
-- The entries, from a word to the left id, the right id, the word cost, and the features of each entry
-- The connection costs, from a right id and a left id to a cost
-- The unknown words, from a character to its class, and from a class to its entries
+- **Trie:** From a text position to the words that start there.
+- **Entries:** From a word to the left id, the right id, the word cost, and the features of each entry.
+- **Connection costs:** From a right id and a left id to a cost.
+- **Unknown words:** From a character to its class, and from a class to its entries.
 
 One word has one or more entries, and the entries have no other relation to each other, so a diagram adds nothing.
 
@@ -120,9 +139,10 @@ One word has one or more entries, and the entries have no other relation to each
 
 - `getTokenizerOption.dicPath?: string` is the dictionary path of a call.
 - The environment variable `KUROMOJIN_DIC_PATH` is read in Node.js.
-- `window.kuromojin.dicPath` is read in a browser.
-- `kuromojin.dict` in a dictionary directory is a dictionary in the format of kuromojin.
-- The npm package publishes the `dict` directory with the dictionary of the package.
+- `globalThis.kuromojin.dicPath` is read in every environment. In a page it is the same as `window.kuromojin.dicPath`.
+- A dictionary path that ends with `.dict` is the file of a dictionary in the format of kuromojin.
+- Any other dictionary path is a directory or a URL with the twelve files of kuromoji.js.
+- The npm package publishes the `dict` directory with the dictionary of the package, `kuromojin.dict`.
 
 ## External service integration
 
@@ -144,7 +164,7 @@ None beyond the [security considerations of the Requirements](requirements.md#se
 ## Deployment notes
 
 A page or a project that points the dictionary path at a dictionary of kuromoji.js keeps working without a change.
-It gets the smaller download only after the path is changed to the `dict` directory of the kuromojin package.
+It gets the smaller download only after the path is changed to the `kuromojin.dict` file of the kuromojin package.
 
 The dictionary changes the tokens of a text when its words or costs change, so such a change is released as a major version.
 
@@ -154,6 +174,17 @@ The dictionary changes the tokens of a text when its words or costs change, so s
 
 The package could publish the twelve files of kuromoji.js as they are.
 It was not chosen, because that format stores a double-array trie and fixed-width records, which stay large after gzip, and the dictionary is the largest part of what a writer installs and a browser downloads.
+
+### Look for a file of kuromojin in the dictionary path first
+
+The dictionary path could always be a directory, and the load could ask it for `kuromojin.dict` first and read the twelve files of kuromoji.js only when that file is missing.
+It was not chosen, because every load of a dictionary of kuromoji.js would start with a request that fails.
+The answer to that request also cannot be trusted to mean "missing": a server that answers every unknown path with the page of an application returns a file that is not a dictionary, and a request that fails for another reason would end in an error about the files of the other format.
+
+### Read the global setting from `window` only
+
+The global setting could be read from `window.kuromojin.dicPath` only.
+It was not chosen, because a worker has no `window`, so a module in a worker could not use the setting.
 
 ### Store each part as a file of its own
 

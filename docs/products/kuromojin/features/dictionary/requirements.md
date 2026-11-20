@@ -35,7 +35,7 @@ As a writer who runs Japanese rules in Node.js, I want the dictionary to be foun
 
 Scenario: When no dictionary path is given in Node.js, the dictionary of the package is used
 
-- Given: kuromojin installed with npm, and no `dicPath` option, no `KUROMOJIN_DIC_PATH`, and no `window.kuromojin`
+- Given: kuromojin installed with npm, and no `dicPath` option, no `KUROMOJIN_DIC_PATH`, and no `globalThis.kuromojin`
 - When: `getTokenizer` is called
 - Then: The Promise resolves with a tokenizer that uses the dictionary file in the `dict` directory of the kuromojin package
 
@@ -71,27 +71,33 @@ As a developer who uses kuromojin in a browser or in a special environment, I wa
 
 Scenario: When a page sets the dictionary URL globally, every module uses it
 
-- Given: A page that sets `window.kuromojin = { dicPath: "https://example.com/dict" }` before the dictionary is loaded
+- Given: A page that sets `window.kuromojin = { dicPath: "https://example.com/dict/kuromojin.dict" }` before the dictionary is loaded
 - When: Any module of the page calls `getTokenizer` or `tokenize` without options
-- Then: The dictionary is requested from `https://example.com/dict/`
+- Then: The dictionary is requested from `https://example.com/dict/kuromojin.dict`
+
+Scenario: When a worker sets the dictionary URL globally, the modules of the worker use it
+
+- Given: A Web Worker that sets `globalThis.kuromojin = { dicPath: "https://example.com/dict/kuromojin.dict" }` before the dictionary is loaded
+- When: A module of the worker calls `getTokenizer` without options
+- Then: The dictionary is requested from `https://example.com/dict/kuromojin.dict`
 
 Scenario: When a browser loads the dictionary of the package, it downloads one file
 
-- Given: A page whose dictionary path is a URL that serves the `dict` directory of the kuromojin package
+- Given: A page whose dictionary path is the URL of the `kuromojin.dict` file of the kuromojin package
 - When: `getTokenizer` is called
-- Then: The page requests `kuromojin.dict` from that URL and no other dictionary file, and the Promise resolves with a tokenizer
+- Then: The page requests that URL and no other dictionary file, and the Promise resolves with a tokenizer
 
 Scenario: When the first call has a dictionary path, the dictionary is loaded from it
 
 - Given: The dictionary is not loaded yet
-- When: `getTokenizer({ dicPath })` is called with the path of a directory that has the dictionary files
-- Then: The dictionary is loaded from that directory, even when `KUROMOJIN_DIC_PATH` names another one
+- When: `getTokenizer({ dicPath })` is called with the path of a dictionary
+- Then: The dictionary is loaded from that path, even when `KUROMOJIN_DIC_PATH` names another one
 
 Scenario: When the environment variable is set, the dictionary is loaded from it
 
-- Given: `KUROMOJIN_DIC_PATH` set to the path of a directory that has the dictionary files, and the dictionary not loaded yet
+- Given: `KUROMOJIN_DIC_PATH` set to the path of a dictionary, and the dictionary not loaded yet
 - When: `getTokenizer` is called without options
-- Then: The dictionary is loaded from that directory
+- Then: The dictionary is loaded from that path
 
 ### Keep using a dictionary of kuromoji.js
 
@@ -99,11 +105,17 @@ As a developer whose page or project points kuromojin at a dictionary of kuromoj
 
 **Acceptance criteria:**
 
-Scenario: When the dictionary path has a dictionary of kuromoji.js, it is loaded
+Scenario: When the dictionary path is a directory with a dictionary of kuromoji.js, it is loaded
 
-- Given: A dictionary path with the twelve `*.dat.gz` files of the `dict` directory of kuromoji.js 0.1.2, and the dictionary not loaded yet
+- Given: A dictionary path that names the `dict` directory of kuromoji.js 0.1.2 with its twelve `*.dat.gz` files, and the dictionary not loaded yet
 - When: `tokenize` is called with the text `黒文字`
 - Then: The Promise resolves with the same token as with the dictionary of the package
+
+Scenario: When a browser loads a dictionary of kuromoji.js, it requests only the files of that dictionary
+
+- Given: A page whose dictionary path is a URL that serves the `dict` directory of kuromoji.js 0.1.2
+- When: `getTokenizer` is called
+- Then: The page requests the twelve `*.dat.gz` files and no other file, and the Promise resolves with a tokenizer
 
 ### Notice a dictionary that cannot be loaded
 
@@ -137,9 +149,9 @@ Scenario: When a dictionary file cannot be read, the Promise is rejected with th
 
 **Overview:** kuromojin decides the dictionary path when the first call of `getTokenizer` or `tokenize` starts loading.
 
-**Input:** The `options` of that call, the environment variable `KUROMOJIN_DIC_PATH`, and `window.kuromojin.dicPath`.
+**Input:** The `options` of that call, the environment variable `KUROMOJIN_DIC_PATH`, and `globalThis.kuromojin.dicPath`.
 
-**Output:** The directory or URL that the dictionary files are loaded from.
+**Output:** The file, directory, or URL that the dictionary is loaded from.
 
 #### Applicable conditions
 
@@ -147,14 +159,17 @@ The first of these that exists is used.
 
 1. `dicPath` of the `options` of the call
 2. The environment variable `KUROMOJIN_DIC_PATH`
-3. `window.kuromojin.dicPath`
-4. The `dict` directory of the kuromojin package
+3. `globalThis.kuromojin.dicPath`
+4. The file `kuromojin.dict` in the `dict` directory of the kuromojin package
 
 A source that is not set is skipped. So `options` without `dicPath`, for example with only `noCacheTokenize`, leave the choice to the other three.
 
+The third one is read from the global object of the environment, so it works in a page, in a worker, and in Node.js.
+In a page, the global object is `window`, so `window.kuromojin.dicPath` is the same setting.
+
 The fourth one needs the file system of Node.js.
-In a browser, the dictionary path has to be given by `options` or by `window.kuromojin.dicPath`.
-The `dict` directory is published in the npm package, so a server that serves the files of the package can be that path.
+In a browser, the dictionary path has to be given by `options` or by `globalThis.kuromojin.dicPath`.
+The `dict` directory is published in the npm package, so the URL of its file on a server that serves the files of the package can be that path.
 
 #### Exceptional behavior
 
@@ -176,13 +191,14 @@ When a browser has none of the first three, the load fails as described under [D
 
 The dictionary of the package has the words of the IPADIC dictionary of kuromoji.js 0.1.2, with the same parts of speech, readings, and costs.
 It is stored in the format of kuromojin, which is made to be small to download and quick to load.
-A dictionary in this format is one file named `kuromojin.dict` in the dictionary path.
+A dictionary in this format is one file, and the file of the package is named `kuromojin.dict`.
 The file has all the data of the dictionary, and it tells the version of its format.
+A dictionary path that ends with `.dict` names such a file.
 
 ##### Dictionary of kuromoji.js
 
-When a dictionary path has no `kuromojin.dict`, it can have a dictionary in the format of kuromoji.js: the twelve files `base.dat.gz`, `check.dat.gz`, `tid.dat.gz`, `tid_pos.dat.gz`, `tid_map.dat.gz`, `cc.dat.gz`, `unk.dat.gz`, `unk_pos.dat.gz`, `unk_map.dat.gz`, `unk_char.dat.gz`, `unk_compat.dat.gz`, and `unk_invoke.dat.gz`.
-kuromojin tells the two formats apart by itself, and the caller does not name the format.
+A dictionary path that does not end with `.dict` names a directory or a URL with a dictionary in the format of kuromoji.js: the twelve files `base.dat.gz`, `check.dat.gz`, `tid.dat.gz`, `tid_pos.dat.gz`, `tid_map.dat.gz`, `cc.dat.gz`, `unk.dat.gz`, `unk_pos.dat.gz`, `unk_map.dat.gz`, `unk_char.dat.gz`, `unk_compat.dat.gz`, and `unk_invoke.dat.gz`.
+kuromojin tells the two formats apart by the end of the dictionary path. So the caller does not name the format, and kuromojin reads only the files of that format.
 Such a dictionary can have other words than the dictionary of the package, for example when a user built it with the tools of kuromoji.js. The tokens then follow that dictionary.
 
 ##### Node.js and browsers
@@ -201,7 +217,7 @@ When `node_modules` has several copies of kuromojin, each copy loads its own dic
 ##### Dictionary that cannot be loaded
 
 When a file cannot be read, the Promise of the call is rejected with the error of the read.
-When `kuromojin.dict` tells a version of the format that the installed kuromojin does not know, or is not a dictionary of kuromojin, the Promise is rejected with an error that says so.
+When a file whose path ends with `.dict` tells a version of the format that the installed kuromojin does not know, or is not a dictionary of kuromojin, the Promise is rejected with an error that says so.
 kuromojin does not try again: every later call in the process is rejected with the same error, even with another dictionary path.
 
 ## Data requirements
