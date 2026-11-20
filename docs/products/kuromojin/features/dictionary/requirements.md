@@ -37,7 +37,7 @@ Scenario: When no dictionary path is given in Node.js, the dictionary of the pac
 
 - Given: kuromojin installed with npm, and no `dicPath` option, no `KUROMOJIN_DIC_PATH`, and no `window.kuromojin`
 - When: `getTokenizer` is called
-- Then: The Promise resolves with a tokenizer that uses the dictionary in the `dict` directory of the kuromojin package
+- Then: The Promise resolves with a tokenizer that uses the dictionary file in the `dict` directory of the kuromojin package
 
 Scenario: When the first call has options without a dictionary path, the dictionary of the package is used
 
@@ -73,7 +73,13 @@ Scenario: When a page sets the dictionary URL globally, every module uses it
 
 - Given: A page that sets `window.kuromojin = { dicPath: "https://example.com/dict" }` before the dictionary is loaded
 - When: Any module of the page calls `getTokenizer` or `tokenize` without options
-- Then: The dictionary files are requested from `https://example.com/dict/`
+- Then: The dictionary is requested from `https://example.com/dict/`
+
+Scenario: When a browser loads the dictionary of the package, it downloads one file
+
+- Given: A page whose dictionary path is a URL that serves the `dict` directory of the kuromojin package
+- When: `getTokenizer` is called
+- Then: The page requests `kuromojin.dict` from that URL and no other dictionary file, and the Promise resolves with a tokenizer
 
 Scenario: When the first call has a dictionary path, the dictionary is loaded from it
 
@@ -170,18 +176,19 @@ When a browser has none of the first three, the load fails as described under [D
 
 The dictionary of the package has the words of the IPADIC dictionary of kuromoji.js 0.1.2, with the same parts of speech, readings, and costs.
 It is stored in the format of kuromojin, which is made to be small to download and quick to load.
-A dictionary in this format is a directory with a file named `kuromojin-dict.json`, which tells the version of the format, and data files compressed with gzip.
+A dictionary in this format is one file named `kuromojin.dict` in the dictionary path.
+The file has all the data of the dictionary, and it tells the version of its format.
 
 ##### Dictionary of kuromoji.js
 
-A dictionary path can also have a dictionary in the format of kuromoji.js: the twelve files `base.dat.gz`, `check.dat.gz`, `tid.dat.gz`, `tid_pos.dat.gz`, `tid_map.dat.gz`, `cc.dat.gz`, `unk.dat.gz`, `unk_pos.dat.gz`, `unk_map.dat.gz`, `unk_char.dat.gz`, `unk_compat.dat.gz`, and `unk_invoke.dat.gz`.
+When a dictionary path has no `kuromojin.dict`, it can have a dictionary in the format of kuromoji.js: the twelve files `base.dat.gz`, `check.dat.gz`, `tid.dat.gz`, `tid_pos.dat.gz`, `tid_map.dat.gz`, `cc.dat.gz`, `unk.dat.gz`, `unk_pos.dat.gz`, `unk_map.dat.gz`, `unk_char.dat.gz`, `unk_compat.dat.gz`, and `unk_invoke.dat.gz`.
 kuromojin tells the two formats apart by itself, and the caller does not name the format.
 Such a dictionary can have other words than the dictionary of the package, for example when a user built it with the tools of kuromoji.js. The tokens then follow that dictionary.
 
 ##### Node.js and browsers
 
-In Node.js, the files are read from the dictionary path with the file system.
-In a browser, they are requested with HTTP and decompressed by the browser, so the browser needs `fetch` and [`DecompressionStream`](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream).
+In Node.js, the dictionary is read from the dictionary path with the file system.
+In a browser, it is requested with HTTP and decompressed by the browser, so the browser needs `fetch` and [`DecompressionStream`](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream).
 
 ##### One dictionary per installed copy
 
@@ -194,15 +201,15 @@ When `node_modules` has several copies of kuromojin, each copy loads its own dic
 ##### Dictionary that cannot be loaded
 
 When a file cannot be read, the Promise of the call is rejected with the error of the read.
-When `kuromojin-dict.json` tells a version of the format that the installed kuromojin does not know, the Promise is rejected with an error that names the version.
+When `kuromojin.dict` tells a version of the format that the installed kuromojin does not know, or is not a dictionary of kuromojin, the Promise is rejected with an error that says so.
 kuromojin does not try again: every later call in the process is rejected with the same error, even with another dictionary path.
 
 ## Data requirements
 
 ### Required data
 
-- **Dictionary files:** The words of IPADIC with their parts of speech, readings, and costs. kuromojin only reads them.
-- **Notices:** The copyright and license notices of mecab-ipadic and of kuromoji.js. They are published in the `dict` directory together with the dictionary files.
+- **Dictionary file:** The words of IPADIC with their parts of speech, readings, and costs. kuromojin only reads it.
+- **Notices:** The copyright and license notices of mecab-ipadic and of kuromoji.js. They are published in the `dict` directory together with the dictionary file.
 
 ### Relationships
 

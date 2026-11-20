@@ -37,7 +37,7 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 - Given: npm でインストールした kuromojin があり、`dicPath` オプション、`KUROMOJIN_DIC_PATH`、`window.kuromojin` のどれもない
 - When: `getTokenizer` を呼ぶ
-- Then: Promise は、kuromojin のパッケージの `dict` ディレクトリにある辞書を使うトークナイザーで解決する
+- Then: Promise は、kuromojin のパッケージの `dict` ディレクトリにある辞書のファイルを使うトークナイザーで解決する
 
 シナリオ：最初の呼び出しのオプションに辞書のパスがないとき、パッケージの辞書が使われる
 
@@ -73,7 +73,13 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 - Given: 辞書が読み込まれる前に `window.kuromojin = { dicPath: "https://example.com/dict" }` を設定するページ
 - When: そのページのどれかのモジュールが、オプションなしで `getTokenizer` または `tokenize` を呼ぶ
-- Then: 辞書のファイルは `https://example.com/dict/` に要求される
+- Then: 辞書は `https://example.com/dict/` に要求される
+
+シナリオ：ブラウザがパッケージの辞書を読み込むとき、1 つのファイルをダウンロードする
+
+- Given: 辞書のパスが、kuromojin のパッケージの `dict` ディレクトリを配信する URL であるページ
+- When: `getTokenizer` を呼ぶ
+- Then: ページはその URL に `kuromojin.dict` を要求し、ほかの辞書のファイルは要求しない。Promise はトークナイザーで解決する
 
 シナリオ：最初の呼び出しに辞書のパスがあるとき、辞書はそこから読み込まれる
 
@@ -170,17 +176,18 @@ Node.js で日本語のルールを実行する書き手として、設定なし
 
 パッケージの辞書は、kuromoji.js 0.1.2 の IPADIC の辞書の単語を、同じ品詞、読み、コストで持ちます。
 辞書は kuromojin の形式で保存されています。この形式は、ダウンロードが小さく、読み込みが速くなるように作られています。
-この形式の辞書は 1 つのディレクトリで、形式のバージョンを示す `kuromojin-dict.json` というファイルと、gzip で圧縮されたデータのファイルからなります。
+この形式の辞書は、辞書のパスにある `kuromojin.dict` という 1 つのファイルです。
+このファイルは辞書のすべてのデータを持ち、形式のバージョンを示します。
 
 ##### kuromoji.js の辞書
 
-辞書のパスには、kuromoji.js の形式の辞書を置くこともできます。`base.dat.gz`、`check.dat.gz`、`tid.dat.gz`、`tid_pos.dat.gz`、`tid_map.dat.gz`、`cc.dat.gz`、`unk.dat.gz`、`unk_pos.dat.gz`、`unk_map.dat.gz`、`unk_char.dat.gz`、`unk_compat.dat.gz`、`unk_invoke.dat.gz` の 12 個のファイルです。
+辞書のパスに `kuromojin.dict` がないときは、kuromoji.js の形式の辞書を置くことができます。`base.dat.gz`、`check.dat.gz`、`tid.dat.gz`、`tid_pos.dat.gz`、`tid_map.dat.gz`、`cc.dat.gz`、`unk.dat.gz`、`unk_pos.dat.gz`、`unk_map.dat.gz`、`unk_char.dat.gz`、`unk_compat.dat.gz`、`unk_invoke.dat.gz` の 12 個のファイルです。
 kuromojin は 2 つの形式を自分で見分けるので、呼び出し元は形式を指定しません。
 このような辞書は、利用者が kuromoji.js のツールで作った辞書のように、パッケージの辞書とは違う単語を持つことがあります。そのときのトークンは、その辞書に従います。
 
 ##### Node.js とブラウザ
 
-Node.js では、ファイルを辞書のパスからファイルシステムで読みます。
+Node.js では、辞書を辞書のパスからファイルシステムで読みます。
 ブラウザでは、HTTP で要求し、ブラウザが展開します。そのため、ブラウザには `fetch` と [`DecompressionStream`](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream) が必要です。
 
 ##### インストールされたコピーごとに 1 つの辞書
@@ -194,7 +201,7 @@ Node.js では、ファイルを辞書のパスからファイルシステムで
 ##### 読み込めない辞書
 
 ファイルを読めないとき、その呼び出しの Promise は読み込みのエラーで拒否されます。
-`kuromojin-dict.json` が、インストールされた kuromojin の知らない形式のバージョンを示すとき、Promise はそのバージョンを含むエラーで拒否されます。
+`kuromojin.dict` が、インストールされた kuromojin の知らない形式のバージョンを示すとき、または kuromojin の辞書ではないとき、Promise はそのことを伝えるエラーで拒否されます。
 kuromojin は読み込みをやり直しません。そのプロセスのその後の呼び出しは、別の辞書のパスを指定しても、すべて同じエラーで拒否されます。
 
 ## データ要件

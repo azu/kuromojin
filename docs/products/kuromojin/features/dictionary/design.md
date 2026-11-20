@@ -22,8 +22,8 @@ How the tokenizer analyzes a text with the loaded dictionary, and how tokens are
 ## Implementation approach
 
 kuromojin loads the dictionary by itself.
-It decides the dictionary path, reads the files from it, turns them into the tables that the tokenizer reads, and keeps the tokenizer in the module.
-The dictionary of the package is stored in a format of kuromojin, whose goal is a small download and a quick load with the same words and costs as the dictionary of kuromoji.js.
+It decides the dictionary path, reads the dictionary from it, turns it into the tables that the tokenizer reads, and keeps the tokenizer in the module.
+The dictionary of the package is one file in a format of kuromojin, whose goal is a small download and a quick load with the same words and costs as the dictionary of kuromoji.js.
 
 ### Dictionary path
 
@@ -42,29 +42,42 @@ The load resolves the Promise with the tokenizer or rejects it with the error.
 The flag is never cleared.
 So a failed load leaves the rejected Promise in place, and every later call gets it.
 
-### Reading the files
+### Reading and decompressing
 
-One function hides the difference between Node.js and browsers: it takes the path or URL of a file and returns its decompressed bytes.
-In Node.js it reads the file with the file system and decompresses it with the `zlib` module.
-In a browser it requests the file with `fetch` and decompresses it with `DecompressionStream`.
-A server can remove the gzip compression before the browser sees the file, so the browser function decompresses only when the bytes start with the gzip signature.
-kuromojin chooses between the two when a load starts, by whether it runs in Node.js.
-
-The files of a dictionary do not depend on each other, so they are requested at the same time.
+Two functions hide the difference between Node.js and browsers.
+The first takes the path or URL of a file and returns its bytes: it reads the file with the file system in Node.js, and requests it with `fetch` in a browser.
+The second decompresses gzip data: with the `zlib` module in Node.js, and with `DecompressionStream` in a browser.
+kuromojin chooses the pair when a load starts, by whether it runs in Node.js.
 
 ### Format of the dictionary
 
-The load first asks for `kuromojin-dict.json` in the dictionary path.
-When the file is there, the dictionary is in the format of kuromojin, and the file tells the version of the format and the compression of the data files.
-A version that the code does not know ends the load with an error.
-When the file is not there, the dictionary is read as the twelve files of kuromoji.js.
+The load first asks for `kuromojin.dict` in the dictionary path.
+When the file is there, the dictionary is in the format of kuromojin.
+When the file is not there, the dictionary is read as the twelve files of kuromoji.js, which are requested at the same time.
+A server can remove the gzip compression of a `.gz` file before the browser sees it, so each of the twelve files is decompressed only when its bytes start with the gzip signature.
 
 Both formats are turned into the same tables, so the tokenizer does not know which one was loaded.
 The lookup of the words that start at a position is the only part with two implementations: the trie of kuromojin for its own format, and the double-array trie of kuromoji.js for the other.
 
-### Format of kuromojin
+### File of the format of kuromojin
 
-The format stores the same data as the dictionary of kuromoji.js, arranged so that gzip can compress it well and that loading is a few passes over arrays.
+The dictionary is one file, so that it is copied, cached, and requested as a whole and its parts can never come from different versions.
+The file has three regions in this order.
+
+1. A start of fixed length: a signature that tells that the file is a dictionary of kuromojin, the version of the format, and the length of the table.
+2. The table, written as JSON. It names each part of the data and gives its position in the file, its length in the file, and its length after decompression.
+3. The parts of the data, each compressed as its own gzip stream.
+
+The start and the table are not compressed, so kuromojin checks the signature and the version before it decompresses anything.
+A file without the signature, or with a version that the code does not know, ends the load with an error.
+
+Each part is its own gzip stream so that the parts are decompressed at the same time.
+In Node.js, `zlib` decompresses them on its worker threads, and the length after decompression lets it write each part into one buffer of the right size.
+In a browser, each part goes through its own `DecompressionStream`.
+
+### Data of the format of kuromojin
+
+The parts store the same data as the dictionary of kuromoji.js, arranged so that gzip can compress it well and that loading is a few passes over arrays.
 
 - **Words:** A trie of the UTF-16 code units of the words. The nodes are written in breadth-first order, each with its character, the number of its children, and one bit that tells whether a word ends there. The children of a node are next to each other, so no node stores a position.
 - **Entries of a word:** For each word, the number of its entries and the numbers of the entries. Each number is written as the difference from the one before, in as few bytes as it needs.
@@ -86,11 +99,11 @@ The strings of the features stay in one buffer and are decoded only for the toke
 
 A script of the repository converts the dictionary files of kuromoji.js 0.1.2 into the format of kuromojin.
 It converts the built files instead of the sources of mecab-ipadic, so that the entries, their order, and their numbers are the ones of the reference result.
-The converted files are kept in the repository in the `dict` directory, together with the notices of mecab-ipadic and kuromoji.js, and they are published with the package.
+The converted file is kept in the repository in the `dict` directory, together with the notices of mecab-ipadic and kuromoji.js, and it is published with the package.
 
 ## Architecture and sequence diagrams
 
-No diagram is needed. A load is one sequence behind one Promise: decide the path, read the description of the format, read the data files, and build the tables.
+No diagram is needed. A load is one sequence behind one Promise: decide the path, read the file, check its start, decompress its parts, and build the tables.
 
 ## Data model and ER diagrams
 
@@ -108,7 +121,7 @@ One word has one or more entries, and the entries have no other relation to each
 - `getTokenizerOption.dicPath?: string` is the dictionary path of a call.
 - The environment variable `KUROMOJIN_DIC_PATH` is read in Node.js.
 - `window.kuromojin.dicPath` is read in a browser.
-- `kuromojin-dict.json` in a dictionary directory has `format`, the version of the format as a number, and `compression`, the compression of the data files.
+- `kuromojin.dict` in a dictionary directory is a dictionary in the format of kuromojin.
 - The npm package publishes the `dict` directory with the dictionary of the package.
 
 ## External service integration
@@ -117,12 +130,12 @@ None. The dictionary and the code that loads it are part of the kuromojin packag
 
 ## Data handling
 
-The dictionary files are read and never written.
+The dictionary file is read and never written.
 The decompressed dictionary stays in memory until the process ends.
 
 ## Authentication and authorization notes
 
-None. kuromojin sends no credentials with the requests for the dictionary files.
+None. kuromojin sends no credentials with the request for the dictionary.
 
 ## Security considerations
 
@@ -133,7 +146,7 @@ None beyond the [security considerations of the Requirements](requirements.md#se
 A page or a project that points the dictionary path at a dictionary of kuromoji.js keeps working without a change.
 It gets the smaller download only after the path is changed to the `dict` directory of the kuromojin package.
 
-The dictionary files change the tokens of a text when their words or costs change, so such a change is released as a major version.
+The dictionary changes the tokens of a text when its words or costs change, so such a change is released as a major version.
 
 ## Alternatives considered
 
@@ -142,9 +155,20 @@ The dictionary files change the tokens of a text when their words or costs chang
 The package could publish the twelve files of kuromoji.js as they are.
 It was not chosen, because that format stores a double-array trie and fixed-width records, which stay large after gzip, and the dictionary is the largest part of what a writer installs and a browser downloads.
 
+### Store each part as a file of its own
+
+The parts could be separate files in the dictionary directory, next to a file that tells the version of the format.
+It was not chosen, because a dictionary is used only as a whole. Separate files need a request for each part in a browser, and a copy or a cache can end up with parts of different versions.
+
+### Compress the whole file as one gzip stream
+
+The file could be one gzip stream around all the parts.
+It was not chosen, because the parts would be decompressed one after another, and the version of the format could be read only after decompression.
+A server can also remove the compression of a `.gz` file before the browser sees it, which the loader would have to detect.
+
 ### Compress with Brotli
 
-Brotli makes the files smaller than gzip does.
+Brotli makes the dictionary smaller than gzip does.
 It was not chosen, because `DecompressionStream` does not decompress Brotli in every browser that has it, and a decompressor written in JavaScript would have to be added for those browsers.
 The [format list of `DecompressionStream`](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream/DecompressionStream) shows which browsers support each format.
 
