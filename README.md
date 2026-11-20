@@ -67,7 +67,7 @@ tokenize(text).then((tokens) => {
 ### Options
 
 - `dicPath?: string`: the [dictionary path](#dictionary). It is used only by the call that starts loading the dictionary.
-- `dictionaryVersion?: string`: the [dictionary version](#dictionary-versions) of the call, as a date written as `YYYY-MM-DD`.
+- `dictionaryVersion?: DictionaryVersion`: the [dictionary version](#dictionary-versions) of the call, as a date written as `YYYY-MM-DD`. The type `DictionaryVersion` is a string of this form.
 - `noCacheTokenize?: boolean`: `tokenize()` analyzes the text again and does not remember the tokens. Default: `false`
 
 ## Dictionary

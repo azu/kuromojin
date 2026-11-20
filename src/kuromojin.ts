@@ -6,6 +6,7 @@ import type { Dictionary } from "./analyzer/Dictionary";
 import {
     createDefaultView,
     createDictionaryView,
+    DictionaryVersion,
     DictionaryVersions,
     DictionaryView,
     resolveDictionaryVersion
@@ -15,6 +16,7 @@ import { isNode } from "./analyzer/loader/platform";
 import type { Token } from "./analyzer/Token";
 
 export type KuromojiToken = Token;
+export type { DictionaryVersion };
 export type Tokenizer = {
     /**
      * Split the text after each `、` and `。`, analyze each piece, and return the tokens of all pieces.
@@ -38,7 +40,7 @@ export type getTokenizerOption = {
      * The call gets the dictionary with the changes of every version up to the date.
      * Default: the default dictionary, which does not change within a major version of kuromojin.
      */
-    dictionaryVersion?: string;
+    dictionaryVersion?: DictionaryVersion;
     // Cache by default
     // Default: false
     noCacheTokenize?: boolean;

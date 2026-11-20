@@ -2,11 +2,18 @@
 import type { Dictionary } from "./Dictionary";
 
 /**
+ * A dictionary version as a caller writes it: a date written as YYYY-MM-DD, such as "2007-08-01".
+ * The type checks only the form. A call also checks that the value is a date of the calendar
+ * and that the loaded dictionary has a version for it.
+ */
+export type DictionaryVersion = `${number}-${number}-${number}`;
+
+/**
  * One dictionary version of a dictionary file.
  * The entries that versions add have numbers after the numbers of the base dictionary, in the order of the versions.
  * So the entries of a version are the ones with a number below `entryCount`, without the removed ones.
  */
-export type DictionaryVersion = {
+export type DictionaryVersionRecord = {
     /** YYYY-MM-DD */
     date: string;
     /** number of entries of the dictionary up to this version, including the removed ones */
@@ -18,7 +25,7 @@ export type DictionaryVersion = {
 /**
  * The dictionary versions of a dictionary file, in the order of their dates. The first one is the base dictionary.
  */
-export type DictionaryVersions = DictionaryVersion[];
+export type DictionaryVersions = DictionaryVersionRecord[];
 
 /**
  * The entries of the dictionary that an analysis sees.

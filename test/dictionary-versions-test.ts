@@ -1,6 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
-import type { KuromojiToken } from "../src";
+import type { DictionaryVersion, getTokenizerOption, KuromojiToken } from "../src";
 import {
     BASE_VERSION,
     baseEntriesOf,
@@ -157,16 +157,27 @@ describe("dictionary versions", function () {
                 const values: unknown[] = ["latest", "2027-4-1", "2027-02-30", "20270401", 20270401, null, ""];
                 for (const value of values) {
                     await assert.rejects(
-                        kuromojin.tokenize("令和元年", { dictionaryVersion: value as string }),
+                        kuromojin.tokenize("令和元年", { dictionaryVersion: value as DictionaryVersion }),
                         /must be a date written as YYYY-MM-DD/,
                         String(value)
                     );
                     await assert.rejects(
-                        kuromojin.getTokenizer({ dictionaryVersion: value as string }),
+                        kuromojin.getTokenizer({ dictionaryVersion: value as DictionaryVersion }),
                         /must be a date written as YYYY-MM-DD/
                     );
                 }
             });
+        });
+        it("has a type for the form of a date", function () {
+            const date: getTokenizerOption = { dictionaryVersion: "2027-04-01" };
+            // @ts-expect-error the type takes only three numbers with "-" between them
+            const word: getTokenizerOption = { dictionaryVersion: "latest" };
+            // @ts-expect-error
+            const slashes: getTokenizerOption = { dictionaryVersion: "2027/04/01" };
+            assert.deepStrictEqual(
+                [date, word, slashes].map((option) => typeof option.dictionaryVersion),
+                ["string", "string", "string"]
+            );
         });
         it("rejects a date earlier than the base dictionary", async function () {
             await withTestDictionary(async () => {

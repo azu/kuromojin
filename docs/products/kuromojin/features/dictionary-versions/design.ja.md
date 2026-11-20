@@ -157,7 +157,8 @@ erDiagram
 
 ## API とインターフェース
 
-- `getTokenizerOption.dictionaryVersion?: string` は、`tokenize` または `getTokenizer` の呼び出しの辞書のバージョンである。
+- `getTokenizerOption.dictionaryVersion?: DictionaryVersion` は、`tokenize` または `getTokenizer` の呼び出しの辞書のバージョンである。
+- `DictionaryVersion` は、`YYYY-MM-DD` で書いた日付の型である。3 つの数を `-` でつないだ文字列を表す。型が確かめるのはこの形だけで、残りは呼び出しが確かめる。
 - 辞書ファイルの表は、バージョンを並べる。バージョンごとに、日付、エントリーの数、削除するエントリーの番号、変更のダイジェストを持つ。
 - npm パッケージは、読む人のためのバージョンの一覧を `dict` ディレクトリで公開する。
 

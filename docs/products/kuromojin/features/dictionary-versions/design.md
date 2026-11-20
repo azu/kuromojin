@@ -157,7 +157,8 @@ erDiagram
 
 ## APIs and interfaces
 
-- `getTokenizerOption.dictionaryVersion?: string` is the dictionary version of a call of `tokenize` or `getTokenizer`.
+- `getTokenizerOption.dictionaryVersion?: DictionaryVersion` is the dictionary version of a call of `tokenize` or `getTokenizer`.
+- `DictionaryVersion` is the type of a date written as `YYYY-MM-DD`: a string of three numbers with `-` between them. The type checks only this form, and a call checks the rest.
 - The table of the dictionary file lists the versions: for each one, its date, its number of entries, the numbers of the entries that it removes, and the digest of its changes.
 - The npm package publishes the list of versions for readers in the `dict` directory.
 
