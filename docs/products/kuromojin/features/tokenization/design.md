@@ -140,7 +140,14 @@ The time and the memory of an analysis grow with the length of the text, and the
 
 A change that alters the tokens of any text is released as a major version of kuromojin, because rules that compare tokens with patterns depend on them.
 
-The source of the tokenizer is derived from kuromoji.js, which is licensed under the Apache License 2.0, so the package carries its license and notice.
+The source of the tokenizer is derived from kuromoji.js, which is licensed under the Apache License 2.0.
+The lookup of words in a dictionary of kuromoji.js is derived from doublearray, which is licensed under the MIT License.
+The package shows the licenses in this way.
+
+- The `LICENSE` file of the repository has only the MIT License of kuromojin, so that a tool that reads the license of a repository from this file finds one license.
+- The `license` field of `package.json` is `MIT AND Apache-2.0`.
+- The README has a section that names the parts of the package under each license.
+- The package includes the text of the Apache License 2.0, and a notice with the copyright notices of kuromoji.js and doublearray and the changes to their source. The Apache License 2.0 requires both to be passed on with a derived work.
 
 ## Alternatives considered
 
