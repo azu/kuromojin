@@ -1,5 +1,5 @@
 // LICENSE : MIT
-import assert from "assert";
+import assert from "node:assert";
 import { getTokenizer, tokenize } from "../src";
 
 // The scenarios of docs/products/kuromojin/features/tokenization/requirements.md

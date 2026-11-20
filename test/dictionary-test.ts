@@ -1,8 +1,8 @@
 // LICENSE : MIT
-import assert from "assert";
-import fs from "fs";
+import assert from "node:assert";
+import fs from "node:fs";
 import http from "http";
-import path from "path";
+import path from "node:path";
 import type { AddressInfo } from "net";
 import { Analyzer } from "../src/analyzer/Analyzer";
 import { createDefaultView } from "../src/analyzer/DictionaryVersions";

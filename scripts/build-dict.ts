@@ -6,8 +6,8 @@
 //   ts-node scripts/build-dict.ts --entries <word>   print the entries of a word of the base dictionary
 //   ts-node scripts/build-dict.ts --rewrite-versions build even when a version of the existing file is changed.
 //                                                    Use it only for versions that are not released yet.
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import {
     buildDictionary,
     checkReleasedVersions,

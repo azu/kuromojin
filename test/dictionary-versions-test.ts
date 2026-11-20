@@ -1,5 +1,5 @@
 // LICENSE : MIT
-import assert from "assert";
+import assert from "node:assert";
 import type { KuromojiToken } from "../src";
 import {
     BASE_VERSION,

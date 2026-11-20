@@ -1,6 +1,6 @@
 // LICENSE : MIT
 "use strict";
-import assert from "assert";
+import assert from "node:assert";
 // it is compatible check for <= 1.1.0
 import { getTokenizer, tokenize } from "../src";
 

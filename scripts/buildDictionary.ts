@@ -1,10 +1,10 @@
 // LICENSE : MIT
 // Converts the dictionary files of kuromoji.js into the one file of the format of kuromojin.
 // The format is described in docs/products/kuromojin/features/dictionary/design.md.
-import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-import zlib from "zlib";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import zlib from "node:zlib";
 import { KUROMOJI_FILES } from "../src/analyzer/loader/kuromojiFormat";
 import { DictionaryTable, FORMAT_VERSION, SIGNATURE, START_LENGTH } from "../src/analyzer/loader/kuromojinFormat";
 
