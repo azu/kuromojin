@@ -87,12 +87,12 @@ The other fields come from the entry, and a token of an unknown word gets no `re
 ### Reuse of tokens
 
 `tokenize(text, options)` first waits for the tokenizer.
-Then it looks up the text in a map from text to tokens.
-When the text is there, it returns the stored array.
-When it is not, it calls `tokenizeForSentence(text)`, stores the returned array under the text, and returns it.
+Then it looks up the dictionary version of the call and the text in a map to tokens.
+When the pair is there, it returns the stored array.
+When it is not, it calls `tokenizeForSentence(text)` of the tokenizer of that version, stores the returned array under the pair, and returns it.
 With `noCacheTokenize: true`, it calls `tokenizeForSentence(text)` and returns the result without reading or writing the map.
 
-The map keeps the 10,000 most recently used texts and removes the least recently used one when it is full.
+The map keeps the 10,000 most recently used pairs and removes the least recently used one when it is full.
 It is a variable of the module, so each installed copy of kuromojin has its own map, and all callers of one copy share it.
 The stored arrays are not copied or frozen. The read-only type of the result is what keeps callers from changing them.
 
@@ -103,7 +103,7 @@ No diagram is needed. An analysis is one pass over the text followed by one walk
 ## Data model and ER diagrams
 
 The token is the object described in the [fields of a token](requirements.md#fields-of-a-token).
-The cache is one map whose key is the text and whose value is the array of tokens.
+The cache is one map whose key is the dictionary version and the text, and whose value is the array of tokens.
 The table of candidates lives only during one analysis and is described under [Memory of one analysis](#memory-of-one-analysis).
 
 ## APIs and interfaces
@@ -114,7 +114,7 @@ kuromojin exports two functions and three types.
 - `getTokenizer(options?: getTokenizerOption): Promise<Tokenizer>`
 - `KuromojiToken` is the type of a token. It declares `reading` and `pronunciation` as `string`, although a token of an unknown word does not have them.
 - `Tokenizer` has `tokenize(text: string): KuromojiToken[]` and `tokenizeForSentence(text: string): KuromojiToken[]`.
-- `getTokenizerOption` has the optional `dicPath?: string` and `noCacheTokenize?: boolean`.
+- `getTokenizerOption` has the optional `dicPath?: string`, `dictionaryVersion?: string`, and `noCacheTokenize?: boolean`.
 
 ## External service integration
 
@@ -139,6 +139,7 @@ The time and the memory of an analysis grow with the length of the text, and the
 ## Deployment notes
 
 A change that alters the tokens of any text is released as a major version of kuromojin, because rules that compare tokens with patterns depend on them.
+The fix of a defect that loses or damages characters of the text is released as a bug fix, with the affected texts named in the release notes.
 
 The source of the tokenizer is derived from kuromoji.js, which is licensed under the Apache License 2.0.
 The lookup of words in a dictionary of kuromoji.js is derived from doublearray, which is licensed under the MIT License.

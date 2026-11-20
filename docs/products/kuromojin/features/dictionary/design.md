@@ -34,13 +34,13 @@ When none of them is set, it uses the file `kuromojin.dict` in the `dict` direct
 
 ### Loading once
 
-The module keeps three values: the tokenizer, a flag that tells that a load has started, and one Promise for the result of the load.
-`getTokenizer` returns the tokenizer when it is there.
-Otherwise, when the flag is set, it returns the Promise.
-Otherwise it sets the flag, starts the load, and returns the Promise.
+The module keeps two values: the loaded dictionary with its tokenizers, and one Promise for the result of the load.
+`getTokenizer` returns the tokenizer of the loaded dictionary when it is there.
+Otherwise, when the Promise is there, it returns the Promise.
+Otherwise it starts the load, keeps its Promise, and returns the Promise.
 The load resolves the Promise with the tokenizer or rejects it with the error.
 
-The flag is never cleared.
+The Promise is never replaced.
 So a failed load leaves the rejected Promise in place, and every later call gets it.
 
 ### Reading and decompressing
@@ -66,10 +66,11 @@ The dictionary is one file, so that it is copied, cached, and requested as a who
 The file has three regions in this order.
 
 1. A start of fixed length: a signature that tells that the file is a dictionary of kuromojin, the version of the format, and the length of the table.
-2. The table, written as JSON. It names each part of the data and gives its position in the file, its length in the file, and its length after decompression.
+2. The table, written as JSON. It names each part of the data and gives its position in the file, its length in the file, and its length after decompression. It also lists the dictionary versions of the file, with the number of entries up to each version and the numbers of the entries that it removes.
 3. The parts of the data, each compressed as its own gzip stream.
 
 The start and the table are not compressed, so kuromojin checks the signature and the version before it decompresses anything.
+The table comes before the parts, so a reader can decompress each part as soon as its bytes arrive, without waiting for the end of the file.
 A file without the signature, or with a version that the code does not know, ends the load with an error.
 
 Each part is its own gzip stream so that the parts are decompressed at the same time.
@@ -166,7 +167,8 @@ None beyond the [security considerations of the Requirements](requirements.md#se
 A page or a project that points the dictionary path at a dictionary of kuromoji.js keeps working without a change.
 It gets the smaller download only after the path is changed to the `kuromojin.dict` file of the kuromojin package.
 
-The dictionary changes the tokens of a text when its words or costs change, so such a change is released as a major version.
+The dictionary changes the tokens of a text when its words or costs change, so a change to the base dictionary or to a released dictionary version is released as a major version.
+New words are added as a new dictionary version, which is released as a minor version.
 
 ## Alternatives considered
 
