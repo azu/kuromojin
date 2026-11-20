@@ -34,13 +34,13 @@ When none of them is set, it uses the file `kuromojin.dict` in the `dict` direct
 
 ### Loading once
 
-The module keeps three values: the tokenizer, a flag that tells that a load has started, and one Promise for the result of the load.
-`getTokenizer` returns the tokenizer when it is there.
-Otherwise, when the flag is set, it returns the Promise.
-Otherwise it sets the flag, starts the load, and returns the Promise.
+The module keeps two values: the loaded dictionary with its tokenizers, and one Promise for the result of the load.
+`getTokenizer` returns the tokenizer of the loaded dictionary when it is there.
+Otherwise, when the Promise is there, it returns the Promise.
+Otherwise it starts the load, keeps its Promise, and returns the Promise.
 The load resolves the Promise with the tokenizer or rejects it with the error.
 
-The flag is never cleared.
+The Promise is never replaced.
 So a failed load leaves the rejected Promise in place, and every later call gets it.
 
 ### Reading and decompressing
@@ -66,7 +66,7 @@ The dictionary is one file, so that it is copied, cached, and requested as a who
 The file has three regions in this order.
 
 1. A start of fixed length: a signature that tells that the file is a dictionary of kuromojin, the version of the format, and the length of the table.
-2. The table, written as JSON. It names each part of the data and gives its position in the file, its length in the file, and its length after decompression. It also lists the dictionary versions of the file.
+2. The table, written as JSON. It names each part of the data and gives its position in the file, its length in the file, and its length after decompression. It also lists the dictionary versions of the file, with the number of entries up to each version and the numbers of the entries that it removes.
 3. The parts of the data, each compressed as its own gzip stream.
 
 The start and the table are not compressed, so kuromojin checks the signature and the version before it decompresses anything.
@@ -87,7 +87,6 @@ The parts store the same data as the dictionary of kuromoji.js, arranged so that
 - **Connection costs:** The matrix of costs, where each cell is written as the difference from the cell on its left.
 - **Features:** For every entry, four numbers: its combination of part of speech and conjugation, its base form, its reading, and its pronunciation. Each number points into a list of distinct strings. A marker replaces the number when the base form equals the word as written, or the pronunciation equals the reading.
 - **Unknown words:** The classes of characters and the entries of unknown words, as in the dictionary of kuromoji.js.
-- **Changes of dictionary versions:** The entries that each version adds and the numbers of the entries that it removes, in the order of the versions. The [Dictionary versions Requirements](../dictionary-versions/requirements.md) tell what a version is.
 
 Numbers of two or four bytes are written as planes: first the lowest byte of every number, then the next byte of every number, and so on.
 Neighboring numbers are often close to each other, so the planes of the higher bytes are long runs of the same value, which gzip makes small.

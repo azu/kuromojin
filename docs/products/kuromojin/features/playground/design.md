@@ -32,7 +32,7 @@ The bundler copies the file into the output and gives the page its URL on the sa
 The name of the copy has a hash of the content and keeps the ending `.dict`. The ending tells kuromojin the format of the dictionary, and the hash lets a browser keep the file until the dictionary changes.
 The page passes the URL as `dicPath` to `getTokenizer`.
 
-kuromojin uses the modules of Node.js only when it runs in Node.js, and it reaches them in a way that a bundler does not follow.
+kuromojin uses the modules of Node.js only when it runs in Node.js, and its `package.json` tells a bundler for browsers to leave them out.
 So the page is built without replacements for those modules.
 
 ### Analysis and output
