@@ -13,14 +13,15 @@ The parent Product is [kuromojin](../../product.md).
 
 - The `tokenize` function, and the tokenizer that `getTokenizer` returns
 - The fields of a token
-- Which analysis the tokens come from
+- Which result the tokens have to equal, and how long they stay the same
 - The reuse of the tokens of a text
+- The speed of the analysis
 
 ### Out of scope
 
 - Where the dictionary is found and how it is loaded. See [Dictionary](../dictionary/requirements.md)
 - Comparing tokens with patterns, and splitting a document into sentences. Rules do this with other packages
-- Members of the tokenizer other than `tokenize` and `tokenizeForSentence`. They are not part of the types that kuromojin exports
+- Access to the inside of the analysis, such as the candidates that were not chosen. The tokenizer gives tokens only
 - Dictionaries other than IPADIC, and words added by the user
 
 ## User stories
@@ -55,6 +56,30 @@ Scenario: When the text is empty, there are no tokens
 - When: `tokenize` is called with the text
 - Then: The Promise resolves with an empty array
 
+Scenario: When a text has characters outside the Basic Multilingual Plane, every character is in a token
+
+- Given: The text `𩸽𩸽を食べた`
+- When: `tokenize` is called with the text
+- Then: The tokens are `𩸽𩸽`, `を`, `食べ`, and `た`, and their `word_position` values are 1, 3, 4, and 6
+
+### Analyze any text without a failure
+
+As a writer who lints files that other people wrote, I want every text to be analyzed so that an unusual character does not stop a textlint run.
+
+**Acceptance criteria:**
+
+Scenario: When a text has a NUL character, the character is an unknown word
+
+- Given: A text of three characters: `a`, U+0000, and `b`
+- When: `tokenize` is called with the text
+- Then: The Promise resolves with three tokens, and the second one has U+0000 as `surface_form` and `UNKNOWN` as `word_type`
+
+Scenario: When a text has a surrogate without its pair, the surrogate is an unknown word
+
+- Given: A text of three characters: `あ`, the lone high surrogate U+D83D, and `い`
+- When: `tokenize` is called with the text
+- Then: The Promise resolves with three tokens, and the second one has U+D83D as `surface_form` and `UNKNOWN` as `word_type`
+
 ### Share the analysis with other rules
 
 As a writer who runs many Japanese rules, I want a sentence to be analyzed once so that a run does not repeat the same analysis for every rule.
@@ -87,7 +112,23 @@ Scenario: When the tokenizer analyzes a text, it returns the tokens directly
 
 ## KPIs
 
-None. No metric is defined for this feature.
+### Same tokens as the reference
+
+- **Target value:** For every text of the comparison, the tokens equal the [reference result](#reference-result) in every field.
+- **Measurement method:** Analyze the sentences of real Japanese documents and random strings with kuromojin and with kuromoji.js 0.1.2, and compare the tokens. Texts that the reference loses characters of, or fails on, are compared with the behavior described in this document instead.
+- **Measurement period:** When the analyzer or the format of the dictionary changes.
+
+### Speed of the analysis
+
+- **Target value:** No slower than the previous release on the same texts. Faster is preferred.
+- **Measurement method:** Analyze the sentences of real Japanese documents in a loop, without the reuse of tokens, and compare medians between the previous release and the change.
+- **Measurement period:** When the analyzer or the format of the dictionary changes.
+
+### Time of a textlint run with Japanese rules
+
+- **Target value:** A textlint run with textlint-rule-preset-ja-technical-writing takes 20% or less of the time that the same run takes with kuromojin 3.0.2 and textlint 16.1.1.
+- **Measurement method:** Lint a large set of Japanese documents with the release to measure and the latest textlint, and with the two baseline versions, on the same machine. Alternate the two and compare medians.
+- **Measurement period:** Before a major version of kuromojin is released.
 
 ## Functional requirements
 
@@ -122,11 +163,31 @@ So `word_position - 1` is the index in the JavaScript string only when no surrog
 
 The `surface_form` values of the tokens, joined in order, are the text.
 
-##### Analysis
+##### Reference result
 
-The tokens are the result of kuromoji.js 0.1.2 with its IPADIC dictionary.
+The reference result of a text is what kuromoji.js 0.1.2 returns for it with the same dictionary.
+It is the result that existing rules are written against.
+kuromojin returns the same tokens as the reference, with the same value in every field.
+The only differences are the texts that the reference loses characters of or fails on, which are described under [Characters outside the Basic Multilingual Plane](#characters-outside-the-basic-multilingual-plane) and [Characters that no word contains](#characters-that-no-word-contains).
+
 `tokenize` analyzes the whole text as one piece.
 It does not split the text at `、` or `。` before the analysis, because the split gave wrong results.
+
+##### Stability
+
+The tokens of a text are the same in every release of one major version of kuromojin, with the dictionary that is part of the package.
+
+##### Characters outside the Basic Multilingual Plane
+
+A character outside the Basic Multilingual Plane, such as `𩸽` or an emoji, is a surrogate pair in a JavaScript string.
+kuromojin handles the pair as one character: it is never split into two tokens, and it counts as one in `word_position`.
+Such characters become unknown words in the same way as other characters that the dictionary does not have, and the words after them are analyzed as usual.
+
+##### Characters that no word contains
+
+U+0000 and a surrogate without its pair are characters like any other.
+No word of the dictionary contains them, so each becomes an unknown word or a part of one.
+So every string has tokens, and no text makes `tokenize` reject.
 
 ##### Reuse of tokens
 
@@ -135,15 +196,6 @@ The key is the text only, and the remembered tokens are used whatever `dicPath` 
 The returned array and its tokens are shared by all callers, so a caller must not change them. The type of the result is read-only for this reason.
 
 #### Exceptional behavior
-
-##### Text with U+0000 or a lone high surrogate
-
-The Promise is rejected with a `TypeError`.
-
-##### Unknown word with surrogate pairs
-
-When an unknown word contains surrogate pairs, such as two or more emoji in a row, characters after the word can be missing from the tokens.
-For `𩸽𩸽を食べた`, the tokens are `𩸽𩸽` and `べた`.
 
 ##### Dictionary that cannot be loaded
 
@@ -160,14 +212,14 @@ The Promise is rejected. See [Dictionary](../dictionary/requirements.md).
 #### Applicable conditions
 
 The tokenizer has two synchronous functions that take a text and return a new array of tokens.
-They do not remember tokens.
+They do not remember tokens, and the tokenizer has no other public member.
 
 - `tokenizeForSentence(text)` analyzes the whole text as one piece. `tokenize` of kuromojin uses it.
 - `tokenize(text)` splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces in order.
 
 #### Exceptional behavior
 
-The same as [Tokenize a text](#tokenize-a-text), except that the functions of the tokenizer throw instead of rejecting a Promise.
+None. The tokenizer exists only after the dictionary is loaded, and its functions return tokens for every string.
 
 ## Data requirements
 
@@ -197,4 +249,6 @@ The remembered tokens are shared in the process, so a caller that changes them c
 
 ## Open questions
 
-None.
+- **Target of a textlint run on a small set of documents:** On a small set, the startup of textlint and the rules themselves take most of the time, so the target of 20% can be out of the reach of kuromojin alone. Until this is decided, the target applies to a set of thousands of documents, and a small set is measured and reported without a target. Revisit when the first release with the analyzer of kuromojin is measured. azu decides.
+- **Value of `word_id`:** `word_id` has the same value as in the reference result. Giving the words new numbers would make the dictionary smaller, and no known rule reads `word_id`. Until this is decided, the value stays the same. Revisit when the size of the dictionary is to be reduced further. azu decides.
+- **`word_position` after a surrogate pair:** `word_position` counts a surrogate pair as one character, as the reference result does, so it is not an index in the JavaScript string after such a character. Until this is decided, the count stays as it is, and a rule that needs an index adds up the lengths of the `surface_form` values. Revisit when a rule reports a wrong position in a text with emoji. azu decides.

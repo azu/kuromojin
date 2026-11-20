@@ -6,7 +6,7 @@
 
 kuromojin is a Japanese morphological analyzer for JavaScript.
 It splits Japanese text into tokens. Each token has the word as written, its part of speech, its base form, and its reading.
-The analysis itself is done by [kuromoji.js](https://github.com/takuyaa/kuromoji.js), and kuromojin is a wrapper that makes it easy to use from many callers.
+kuromojin has its own analyzer and its own dictionary data. Both are derived from [kuromoji.js](https://github.com/takuyaa/kuromoji.js), and the tokens are the ones that kuromoji.js returns, because existing rules are written against them.
 A caller gets the tokens of a text with one function call that returns a Promise.
 kuromojin loads the dictionary once and remembers the tokens of each text, so callers in the same process share both.
 
@@ -21,7 +21,7 @@ Japanese is written without spaces between words.
 A check such as "the same particle appears twice in one sentence" first needs to know where each word starts and what its part of speech is.
 Morphological analysis answers this with a dictionary of words, and the dictionary is large.
 
-kuromoji.js is a morphological analyzer written in JavaScript.
+kuromoji.js is a morphological analyzer written in JavaScript, and Japanese textlint rules are written against its tokens.
 Its API builds a tokenizer with a callback, and every build loads the dictionary.
 
 ### Problems to solve
@@ -34,6 +34,11 @@ The work has to be shared between the rules of one run.
 Rules compare tokens with patterns, such as a particle followed by a certain verb.
 When the tokens of a text change, a rule stops detecting without any error.
 So rules depend on the exact result of the analysis, and it has to stay stable.
+
+Writers pay for the analysis on every run without choosing it.
+Every sentence of every document is analyzed, and the dictionary is installed with every project and loaded on every run.
+Unless the analysis is fast and the dictionary is small, they become the main cost of running Japanese rules.
+This matters even more in a browser, where the dictionary is downloaded.
 
 ## Target users
 
@@ -69,11 +74,23 @@ So rules depend on the exact result of the analysis, and it has to stay stable.
 - **Offering:** The dictionary is loaded once per process, and the tokens of a text are reused when another rule asks for the same text.
 - **Reason:** Loading the dictionary and analyzing text are the expensive parts, and the rules of one run ask for the same sentences.
 
+### Tokens that rules can rely on
+
+- **Recipient:** Rule authors
+- **Offering:** The same tokens for the same text in every release of a major version, equal to the tokens that kuromoji.js returns.
+- **Reason:** A rule that compares tokens with patterns stops detecting without any error when the tokens change.
+
+### Analysis that is a small part of a run
+
+- **Recipient:** Writers who run Japanese rules
+- **Offering:** An analyzer and a dictionary format that are made for this use: the analysis is fast, and the dictionary is small to install and download and quick to load, in Node.js and in browsers.
+- **Reason:** The time of a run should go to the rules that the writer chose, not to the analysis under them.
+
 ## Key concepts
 
 - **Token:** One word in the result of the analysis, with its fields such as `surface_form`, `pos`, `basic_form`, and `reading`.
 - **Known word and unknown word:** A known word is a word found in the dictionary. An unknown word is a part of the text that is not in the dictionary, such as a new name. A token tells which one it is with `word_type`.
-- **Dictionary:** The data that the analysis needs: the words with their parts of speech and readings, and the costs that decide which split of a text is the most natural. It is built from [mecab-ipadic](https://taku910.github.io/mecab/) (IPADIC).
+- **Dictionary:** The data that the analysis needs: the words with their parts of speech and readings, and the costs that decide which split of a text is the most natural. It is built from [mecab-ipadic](https://taku910.github.io/mecab/) (IPADIC) and is part of the kuromojin package.
 - **Tokenizer:** The object that analyzes a text synchronously once the dictionary is loaded.
 - **Dictionary path:** The directory or URL that the dictionary files are loaded from.
 
@@ -83,6 +100,7 @@ So rules depend on the exact result of the analysis, and it has to stay stable.
 | --- | --- | --- |
 | Tokenization | Returns the tokens of a Japanese text, and reuses the tokens of a text analyzed before | [Requirements](features/tokenization/requirements.md) |
 | Dictionary | Finds the dictionary and loads it once for all callers | [Requirements](features/dictionary/requirements.md) |
+| Dictionary versions | Lets a writer choose a newer dictionary without changing the default one | Not written |
 | Online playground | Shows the tokens of a text typed in a browser | Not written |
 
 ## Definition of success
@@ -91,8 +109,10 @@ Not defined. See the open questions.
 
 ## Development principles
 
-- **One copy for all callers.** The dictionary and the cache are kept per installed copy of kuromojin, so kuromojin is built to be installed once: it pins the analyzer to an exact version, and the dictionary comes with that version.
+- **One copy for all callers.** The dictionary and the cache are kept per installed copy of kuromojin, so kuromojin is built to be installed once. The analyzer and the dictionary are part of the package, and a rule needs kuromojin alone.
 - **Runs in Node.js and in browsers.** The same API works in both. Only the place of the dictionary differs.
+- **The tokens of a text change only with a major version.** Rules depend on the exact tokens, so the analyzer and the default dictionary give the same result in every release of a major version.
+- **The analyzer and the dictionary format belong to kuromojin.** The analysis does not depend on another analyzer package, so both can be changed for speed and size as long as the tokens stay the same.
 
 ## SLA, SLI, and SLO
 
@@ -107,3 +127,4 @@ None, for the same reason.
 ## Open questions
 
 - **Definition of success:** No product-wide outcome is defined. Decisions are made from the development principles instead. Revisit when a product-wide decision cannot be made from the principles. azu decides.
+- **Dictionary versions:** How a writer chooses a newer dictionary within a major version, for example by a date, is not specified. Until it is, a major version has exactly one dictionary, and new words wait for the next major version. Revisit when words are to be added to the dictionary. azu decides.
