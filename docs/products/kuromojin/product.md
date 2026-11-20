@@ -102,7 +102,7 @@ This matters even more in a browser, where the dictionary is downloaded.
 | Tokenization | Returns the tokens of a Japanese text, and reuses the tokens of a text analyzed before | [Requirements](features/tokenization/requirements.md) |
 | Dictionary | Finds the dictionary and loads it once for all callers | [Requirements](features/dictionary/requirements.md) |
 | Dictionary versions | Lets a caller choose a newer dictionary by a date without changing the default one | [Requirements](features/dictionary-versions/requirements.md) |
-| Online playground | Shows the tokens of a text typed in a browser | Not written |
+| Online playground | Shows the tokens of a text typed in a browser, and serves the dictionary files for trials | [Requirements](features/playground/requirements.md) |
 
 ## Definition of success
 

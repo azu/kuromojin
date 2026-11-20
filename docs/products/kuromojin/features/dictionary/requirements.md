@@ -170,6 +170,7 @@ In a page, the global object is `window`, so `window.kuromojin.dicPath` is the s
 The fourth one needs the file system of Node.js.
 In a browser, the dictionary path has to be given by `options` or by `globalThis.kuromojin.dicPath`.
 The `dict` directory is published in the npm package, so the URL of its file on a server that serves the files of the package can be that path.
+The file is at the path `kuromojin/dict/kuromojin.dict` of the package, and this path is the same in every release of one major version. So a page that is built with a bundler can ask the bundler for the URL of that file and give it as the dictionary path. The [online playground](../playground/requirements.md) is such a page.
 
 #### Exceptional behavior
 
