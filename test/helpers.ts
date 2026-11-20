@@ -97,10 +97,16 @@ export const testVersions: VersionChanges[] = [
 let kuromojiFiles: KuromojiFiles | undefined;
 const getKuromojiFiles = () => kuromojiFiles ?? (kuromojiFiles = readKuromojiFiles(kuromojiDictionaryDirectory));
 let baseEntries: BaseEntry[] | undefined;
+const getBaseEntries = () => baseEntries ?? (baseEntries = readBaseEntries(getKuromojiFiles()));
 /** The entries of a word in the base dictionary */
 export function baseEntriesOf(word: string): BaseEntry[] {
-    if (!baseEntries) baseEntries = readBaseEntries(getKuromojiFiles());
-    return baseEntries.filter((entry) => entry.surface_form === word);
+    return getBaseEntries().filter((entry) => entry.surface_form === word);
+}
+/** The words of every `step`-th entry of the base dictionary, in the order of the dictionary */
+export function baseWordsAtEvery(step: number): string[] {
+    return getBaseEntries()
+        .filter((_, index) => index % step === 0)
+        .map((entry) => entry.surface_form);
 }
 
 let builder: DictionaryBuilder | undefined;

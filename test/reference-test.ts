@@ -6,7 +6,13 @@ import { Analyzer, splitByPunctuation } from "../src/analyzer/Analyzer";
 import { createDefaultView, DictionaryView } from "../src/analyzer/DictionaryVersions";
 import { loadDictionary } from "../src/analyzer/loader/loadDictionary";
 import type { Token } from "../src/analyzer/Token";
-import { baseEntriesOf, kuromojiDictionaryDirectory, packageDictionaryFile, writeTestDictionary } from "./helpers";
+import {
+    baseEntriesOf,
+    baseWordsAtEvery,
+    kuromojiDictionaryDirectory,
+    packageDictionaryFile,
+    writeTestDictionary
+} from "./helpers";
 
 // kuromoji.js has no type definitions
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -51,6 +57,9 @@ const otherTexts = [
     "ーーー！！！？？？",
     "東京特許許可局局長今日急遽休暇許可拒否"
 ];
+
+/** The reference test takes the word of every 20th entry of the dictionary */
+const STEP = 20;
 
 // The reference result is what kuromoji.js 0.1.2 returns with the same dictionary.
 describe("reference result", function () {
@@ -103,6 +112,19 @@ describe("reference result", function () {
                 assert.ok(lines.length > 500, `the documents have ${lines.length} lines`);
                 for (const line of [...lines, ...otherTexts]) {
                     assert.deepStrictEqual(analyzer.analyze(line, [], view), reference.tokenizeForSentence(line), line);
+                }
+            });
+            it("returns the same tokens as kuromoji.js for words from the whole dictionary", function () {
+                // the reference loses characters of a text with a surrogate pair, which has tests of its own
+                const words = baseWordsAtEvery(STEP).filter((word) => !/[\uD800-\uDFFF]/.test(word));
+                assert.ok(words.length > 10000, `the dictionary gives ${words.length} words`);
+                for (const word of words) {
+                    assert.deepStrictEqual(analyzer.analyze(word, [], view), reference.tokenizeForSentence(word), word);
+                }
+                // texts of words that follow each other without a space, so that the costs between words decide
+                for (let i = 0; i < words.length; i += 8) {
+                    const text = words.slice(i, i + 8).join("");
+                    assert.deepStrictEqual(analyzer.analyze(text, [], view), reference.tokenizeForSentence(text), text);
                 }
             });
             it("returns the same tokens as kuromoji.js when the text is split after 、 and 。", function () {
