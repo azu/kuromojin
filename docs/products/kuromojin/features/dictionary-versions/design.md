@@ -56,7 +56,7 @@ It is built from the changes whose version is not later than the version of the 
 
 - The numbers of the removed entries of the base dictionary
 - The added entries that are not removed again: their words, ids, costs, and features
-- An index from the first character of a word to the added words that start with it
+- A trie of the added words, which leads from the characters of a word to the word
 
 The base dictionary is the default version in this major version, so a call without a version has no view.
 The view of a version holds only its changes, so its memory grows with the number of changes and not with the size of the dictionary.
@@ -74,8 +74,9 @@ With a view, a word whose entries are all removed does not count, and an added w
 An added entry has a number after the numbers of the base dictionary, in the order of the list of changes.
 `word_id` is computed from the number as for the entries of the base dictionary, so it does not change when later versions are added to the list.
 
-The search of added words is a scan of the added words that start with the same character.
-It is made for versions that change hundreds of words, and not for a version that replaces a large part of the dictionary.
+The added words that start at a position are found by one walk along the text in the trie of the view, in the same way as the words of the base dictionary.
+So the time of the search does not grow with the number of added words.
+What a version costs in an analysis is its candidates: the added entries are handled on a path of their own, so a version that changes words that are common in texts makes the analysis with it slower.
 
 ### Tokenizer of a version
 
@@ -221,4 +222,4 @@ It was not chosen, because every combination of changes would be a dictionary of
 
 ## Open questions
 
-- **Versions with many changes:** The search of added words scans the added words that start with the same character, which gets slow when a version changes thousands of words that are common in texts. Until this is decided, a version changes hundreds of words at most. Revisit when a version with more changes is proposed, or when the analysis with a version is measurably slower than without one. azu decides.
+- **Versions that change common words:** The candidates of added entries are handled on a path of their own, which is slower than the path of the entries of the base dictionary. So a version that replaces words that are common in texts, such as particles, makes the analysis with it measurably slower. Until this is decided, the pull request of such a version states the measured time of the analysis with it, and azu accepts or declines the version with that number. Revisit when a version that changes common words is proposed. azu decides.
