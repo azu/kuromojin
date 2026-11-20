@@ -88,3 +88,6 @@ crashlytics-build.properties
 .netlify
 
 /public/dict/
+
+# sdev downloads its binary here (see bin/sdev)
+/.sdev/
