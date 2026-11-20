@@ -1,38 +1,41 @@
-import "./kuromoji.patch.js";
-import { getTokenizer } from "../src/index";
+/// <reference types="vite/client" />
+import { getTokenizer, Tokenizer } from "../src/index";
+// The bundler copies the dictionary of the package into the output and gives its URL.
+// The URL keeps the ending `.dict`, which tells kuromojin the format of the dictionary.
+import dictionaryUrl from "../dict/kuromojin.dict?url";
 
-const DICT_URL = "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict";
-export const loadTokenizer = async () => {
-    return await getTokenizer({
-        dicPath: DICT_URL
-    });
-};
-export const run = async () => {
-    const loadingElement = document.querySelector("#loading") as HTMLDivElement;
+export const run = () => {
+    const statusElement = document.querySelector("#loading") as HTMLDivElement;
     const textElement = document.querySelector("#text") as HTMLTextAreaElement;
     const jsonElement = document.querySelector("#json") as HTMLTextAreaElement;
-    loadingElement.textContent = "🤖Loading dictionary... Require DecompressionStream support.";
-    const tokenizer = await loadTokenizer();
-    loadingElement.textContent = "🤖Complete loading!";
-    setTimeout(() => {
-        loadingElement.textContent = "🤖You can tokenize text!";
-    }, 1000);
-    const onUpdate = (text: string) => {
-        try {
-            const json = tokenizer.tokenize(text);
-            jsonElement.textContent = JSON.stringify(json, null, 4);
-            location.hash = encodeURIComponent(text);
-        } catch {}
+    let tokenizer: Tokenizer | undefined;
+
+    const analyze = () => {
+        if (tokenizer === undefined) return;
+        jsonElement.value = JSON.stringify(tokenizer.tokenizeForSentence(textElement.value), null, 4);
     };
 
-    textElement?.addEventListener("input", () => {
-        onUpdate(textElement.value);
+    // the text of the URL
+    try {
+        textElement.value = decodeURIComponent(location.hash.slice(1));
+    } catch {
+        // a fragment that is not a percent-encoded text: the field stays empty
+    }
+    textElement.addEventListener("input", () => {
+        history.replaceState(null, "", "#" + encodeURIComponent(textElement.value));
+        analyze();
     });
 
-    const textFromURL = location.hash;
-    if (textFromURL.length > 0) {
-        const decodedText = decodeURIComponent(textFromURL.slice(1));
-        textElement.value = decodedText;
-        onUpdate(decodedText);
-    }
+    statusElement.textContent = "Loading the dictionary...";
+    getTokenizer({ dicPath: dictionaryUrl }).then(
+        (loaded) => {
+            tokenizer = loaded;
+            statusElement.textContent = "Ready. Type a text to see its tokens.";
+            // a text that was typed or taken from the URL before the dictionary was loaded
+            analyze();
+        },
+        (error: Error) => {
+            statusElement.textContent = `Failed to load the dictionary: ${error.message}`;
+        }
+    );
 };
