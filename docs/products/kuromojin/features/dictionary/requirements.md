@@ -21,7 +21,7 @@ The parent Product is [kuromojin](../../product.md).
 ### Out of scope
 
 - The tokens that the analysis returns. See [Tokenization](../tokenization/requirements.md)
-- Choosing a newer dictionary within a major version. The [Product](../../product.md) lists it as a feature that is not written yet
+- Choosing a newer dictionary by a date. See [Dictionary versions](../dictionary-versions/requirements.md)
 - A tool for users to build a dictionary or to add words to it
 - A dictionary without readings. See the open questions
 
@@ -133,7 +133,7 @@ Scenario: When a dictionary file cannot be read, the Promise is rejected with th
 
 ### Size of the dictionary of the package
 
-- **Target value:** No larger than in the previous release. Smaller is preferred.
+- **Target value:** No larger than in the previous release, apart from the changes of a new dictionary version. Smaller is preferred.
 - **Measurement method:** Add up the sizes of the files in the `dict` directory of the package, as they are published.
 - **Measurement period:** When the dictionary or its format changes.
 
@@ -192,7 +192,7 @@ When a browser has none of the first three, the load fails as described under [D
 The dictionary of the package has the words of the IPADIC dictionary of kuromoji.js 0.1.2, with the same parts of speech, readings, and costs.
 It is stored in the format of kuromojin, which is made to be small to download and quick to load.
 A dictionary in this format is one file, and the file of the package is named `kuromojin.dict`.
-The file has all the data of the dictionary, and it tells the version of its format.
+The file has all the data of the dictionary, including its [dictionary versions](../dictionary-versions/requirements.md), and it tells the version of its format.
 A dictionary path that ends with `.dict` names such a file.
 
 ##### Dictionary of kuromoji.js

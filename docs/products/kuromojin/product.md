@@ -71,13 +71,13 @@ This matters even more in a browser, where the dictionary is downloaded.
 ### One dictionary and one analysis for all rules
 
 - **Recipient:** Writers who run Japanese rules
-- **Offering:** The dictionary is loaded once per process, and the tokens of a text are reused when another rule asks for the same text.
+- **Offering:** The dictionary is loaded once per process, and the tokens of a text are reused when another rule asks for the same text with the same dictionary version.
 - **Reason:** Loading the dictionary and analyzing text are the expensive parts, and the rules of one run ask for the same sentences.
 
 ### Tokens that rules can rely on
 
 - **Recipient:** Rule authors
-- **Offering:** The same tokens for the same text in every release of a major version, equal to the tokens that kuromoji.js returns.
+- **Offering:** The same tokens for the same text in every release of a major version, equal to the tokens that kuromoji.js returns. A rule that needs newer words names a dictionary version, and the tokens of that version stay the same in the same way.
 - **Reason:** A rule that compares tokens with patterns stops detecting without any error when the tokens change.
 
 ### Analysis that is a small part of a run
@@ -92,7 +92,8 @@ This matters even more in a browser, where the dictionary is downloaded.
 - **Known word and unknown word:** A known word is a word found in the dictionary. An unknown word is a part of the text that is not in the dictionary, such as a new name. A token tells which one it is with `word_type`.
 - **Dictionary:** The data that the analysis needs: the words with their parts of speech and readings, and the costs that decide which split of a text is the most natural. It is built from [mecab-ipadic](https://taku910.github.io/mecab/) (IPADIC) and is part of the kuromojin package.
 - **Tokenizer:** The object that analyzes a text synchronously once the dictionary is loaded.
-- **Dictionary path:** The directory or URL that the dictionary files are loaded from.
+- **Dictionary path:** The file, directory, or URL that the dictionary is loaded from.
+- **Dictionary version:** The dictionary as of a date. A change to the words of the dictionary belongs to a version, and a caller that names a date gets the changes up to that date.
 
 ## Feature list
 
@@ -100,7 +101,7 @@ This matters even more in a browser, where the dictionary is downloaded.
 | --- | --- | --- |
 | Tokenization | Returns the tokens of a Japanese text, and reuses the tokens of a text analyzed before | [Requirements](features/tokenization/requirements.md) |
 | Dictionary | Finds the dictionary and loads it once for all callers | [Requirements](features/dictionary/requirements.md) |
-| Dictionary versions | Lets a writer choose a newer dictionary without changing the default one | Not written |
+| Dictionary versions | Lets a caller choose a newer dictionary by a date without changing the default one | [Requirements](features/dictionary-versions/requirements.md) |
 | Online playground | Shows the tokens of a text typed in a browser | Not written |
 
 ## Definition of success
@@ -111,7 +112,7 @@ Not defined. See the open questions.
 
 - **One copy for all callers.** The dictionary and the cache are kept per installed copy of kuromojin, so kuromojin is built to be installed once. The analyzer and the dictionary are part of the package, and a rule needs kuromojin alone.
 - **Runs in Node.js and in browsers.** The same API works in both. Only the place of the dictionary differs.
-- **The tokens of a text change only with a major version.** Rules depend on the exact tokens, so the analyzer and the default dictionary give the same result in every release of a major version.
+- **The tokens of a text change only with a major version.** Rules depend on the exact tokens, so the analyzer and the default dictionary give the same result in every release of a major version. New words come as dictionary versions, and only the callers that name a version see them. The fix of a defect of the analysis, such as characters that are missing from the tokens, is released as a bug fix.
 - **The analyzer and the dictionary format belong to kuromojin.** The analysis does not depend on another analyzer package, so both can be changed for speed and size as long as the tokens stay the same.
 
 ## SLA, SLI, and SLO
@@ -127,4 +128,3 @@ None, for the same reason.
 ## Open questions
 
 - **Definition of success:** No product-wide outcome is defined. Decisions are made from the development principles instead. Revisit when a product-wide decision cannot be made from the principles. azu decides.
-- **Dictionary versions:** How a writer chooses a newer dictionary within a major version, for example by a date, is not specified. Until it is, a major version has exactly one dictionary, and new words wait for the next major version. Revisit when words are to be added to the dictionary. azu decides.

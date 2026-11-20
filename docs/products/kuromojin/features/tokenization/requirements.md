@@ -128,7 +128,7 @@ Scenario: When the tokenizer analyzes a text, it returns the tokens directly
 
 - **Target value:** A textlint run with textlint-rule-preset-ja-technical-writing takes 20% or less of the time that the same run takes with kuromojin 3.0.2 and textlint 16.1.1.
 - **Measurement method:** Lint a large set of Japanese documents with the release to measure and the latest textlint, and with the two baseline versions, on the same machine. Alternate the two and compare medians.
-- **Measurement period:** Before a major version of kuromojin is released.
+- **Measurement period:** Before a release that changes the analyzer or the format of the dictionary.
 
 ## Functional requirements
 
@@ -136,7 +136,7 @@ Scenario: When the tokenizer analyzes a text, it returns the tokens directly
 
 **Overview:** `tokenize(text, options)` returns the tokens of the text.
 
-**Input:** A string, and optionally `options`. `noCacheTokenize: true` turns off the reuse of tokens for the call. `dicPath` is described in [Dictionary](../dictionary/requirements.md).
+**Input:** A string, and optionally `options`. `noCacheTokenize: true` turns off the reuse of tokens for the call. `dicPath` is described in [Dictionary](../dictionary/requirements.md), and `dictionaryVersion` in [Dictionary versions](../dictionary-versions/requirements.md).
 
 **Output:** A Promise of a read-only array of tokens in the order of the text.
 
@@ -175,7 +175,8 @@ It does not split the text at `、` or `。` before the analysis, because the sp
 
 ##### Stability
 
-The tokens of a text are the same in every release of one major version of kuromojin, with the dictionary that is part of the package.
+The tokens of a text are the same in every release of one major version of kuromojin, with the dictionary that is part of the package and the same dictionary version.
+A release can still fix a defect of the analysis, such as characters that are missing from the tokens. Such a fix is a bug fix, and the release notes tell which texts it affects.
 
 ##### Characters outside the Basic Multilingual Plane
 
@@ -192,7 +193,7 @@ So every string has tokens, and no text makes `tokenize` reject.
 ##### Reuse of tokens
 
 `tokenize` remembers the tokens of the 10,000 most recently used texts.
-The key is the text only, and the remembered tokens are used whatever `dicPath` is.
+The key is the text and the dictionary version of the call, and the remembered tokens are used whatever `dicPath` is.
 The returned array and its tokens are shared by all callers, so a caller must not change them. The type of the result is read-only for this reason.
 
 #### Exceptional behavior
@@ -205,9 +206,9 @@ The Promise is rejected. See [Dictionary](../dictionary/requirements.md).
 
 **Overview:** `getTokenizer(options)` returns the tokenizer after the dictionary is loaded.
 
-**Input:** Optionally `options` with `dicPath`. See [Dictionary](../dictionary/requirements.md).
+**Input:** Optionally `options` with `dicPath` and `dictionaryVersion`. See [Dictionary](../dictionary/requirements.md) and [Dictionary versions](../dictionary-versions/requirements.md).
 
-**Output:** A Promise of the tokenizer. Every call resolves with the same tokenizer.
+**Output:** A Promise of the tokenizer. Every call with the same dictionary version resolves with the same tokenizer.
 
 #### Applicable conditions
 
@@ -231,7 +232,7 @@ None. The tokenizer exists only after the dictionary is loaded, and its function
 
 ### Relationships
 
-One text has one array of tokens.
+One text and one dictionary version have one array of tokens.
 
 ### Personal information
 

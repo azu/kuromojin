@@ -66,10 +66,11 @@ The dictionary is one file, so that it is copied, cached, and requested as a who
 The file has three regions in this order.
 
 1. A start of fixed length: a signature that tells that the file is a dictionary of kuromojin, the version of the format, and the length of the table.
-2. The table, written as JSON. It names each part of the data and gives its position in the file, its length in the file, and its length after decompression.
+2. The table, written as JSON. It names each part of the data and gives its position in the file, its length in the file, and its length after decompression. It also lists the dictionary versions of the file.
 3. The parts of the data, each compressed as its own gzip stream.
 
 The start and the table are not compressed, so kuromojin checks the signature and the version before it decompresses anything.
+The table comes before the parts, so a reader can decompress each part as soon as its bytes arrive, without waiting for the end of the file.
 A file without the signature, or with a version that the code does not know, ends the load with an error.
 
 Each part is its own gzip stream so that the parts are decompressed at the same time.
@@ -86,6 +87,7 @@ The parts store the same data as the dictionary of kuromoji.js, arranged so that
 - **Connection costs:** The matrix of costs, where each cell is written as the difference from the cell on its left.
 - **Features:** For every entry, four numbers: its combination of part of speech and conjugation, its base form, its reading, and its pronunciation. Each number points into a list of distinct strings. A marker replaces the number when the base form equals the word as written, or the pronunciation equals the reading.
 - **Unknown words:** The classes of characters and the entries of unknown words, as in the dictionary of kuromoji.js.
+- **Changes of dictionary versions:** The entries that each version adds and the numbers of the entries that it removes, in the order of the versions. The [Dictionary versions Requirements](../dictionary-versions/requirements.md) tell what a version is.
 
 Numbers of two or four bytes are written as planes: first the lowest byte of every number, then the next byte of every number, and so on.
 Neighboring numbers are often close to each other, so the planes of the higher bytes are long runs of the same value, which gzip makes small.
@@ -166,7 +168,8 @@ None beyond the [security considerations of the Requirements](requirements.md#se
 A page or a project that points the dictionary path at a dictionary of kuromoji.js keeps working without a change.
 It gets the smaller download only after the path is changed to the `kuromojin.dict` file of the kuromojin package.
 
-The dictionary changes the tokens of a text when its words or costs change, so such a change is released as a major version.
+The dictionary changes the tokens of a text when its words or costs change, so a change to the base dictionary or to a released dictionary version is released as a major version.
+New words are added as a new dictionary version, which is released as a minor version.
 
 ## Alternatives considered
 
