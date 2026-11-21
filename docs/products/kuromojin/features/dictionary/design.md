@@ -78,10 +78,16 @@ The file has three regions in this order.
 ```mermaid
 block-beta
     columns 3
-    s["Signature"] v["Version of the format"] l["Length of the table"]
-    t["Table (JSON): the dictionary versions, and the name, position, and lengths of each part"]:3
-    p1["Part (gzip stream)"] p2["Part (gzip stream)"] p3["…"]
+    h["Start (not compressed)"]:3
+    s["Signature KMJD (4 bytes)"] v["Version of the format (4 bytes)"] l["Length of the table (4 bytes)"]
+    t["Table (JSON, not compressed): the dictionary versions, and the name, position, and lengths of each part"]:3
+    ph["Parts, each as its own gzip stream"]:3
+    p1["Connection costs"] p2["Unknown words"] p3["Words"]
+    p4["Entries of a word"] p5["Costs and ids"] p6["Features and their strings"]
 ```
+
+The version of the format and the length of the table are unsigned numbers with the lowest byte first.
+The position of a part in the table counts from the end of the table.
 
 The start and the table are not compressed, so kuromojin checks the signature and the version before it decompresses anything.
 The table comes before the parts, so a reader can decompress each part as soon as its bytes arrive, without waiting for the end of the file.
