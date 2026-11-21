@@ -269,6 +269,23 @@ kuromojin returns the tokens of kuromoji.js 0.1.2 for the same text and the same
 - A text with a character outside the Basic Multilingual Plane, such as `𩸽` or an emoji: kuromoji.js loses characters after such a character. kuromojin keeps every character of the text in a token.
 - The tokenizer of `getTokenizer()` has only `tokenize` and `tokenizeForSentence`.
 
+### Why kuromojin has its own analyzer
+
+Up to 3.0, kuromojin was a wrapper of kuromoji.js. Since 3.1.0, it analyzes with its own analyzer and its own dictionary file, because the analysis was the largest cost of a textlint run with Japanese rules.
+The tokens stay the same, and these get smaller. The numbers are rough directions from the measurement of [#27](https://github.com/azu/kuromojin/pull/27), not promises.
+
+| | Compared with kuromojin 3.0 (kuromoji.js 0.1.2) |
+| --- | --- |
+| Time of the analysis of a text | 90%+ less |
+| Time of the load of the dictionary | 70%+ less |
+| Memory after the load | 70%+ less |
+| Installed size with dependencies | 85%+ less (about 48 MB to about 5 MB) |
+| Time of a textlint run with [textlint-rule-preset-ja-technical-writing](https://github.com/textlint-ja/textlint-rule-preset-ja-technical-writing) | 60%+ less |
+
+`yarn run compare` measures these for a change, and CI runs it for each pull request, so that kuromojin does not get slower again.
+
+### Moving from kuromoji.js
+
 Code that moves from kuromoji.js to kuromojin replaces the functions in this way.
 
 | kuromoji.js | kuromojin |
