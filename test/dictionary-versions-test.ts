@@ -165,6 +165,8 @@ describe("dictionary versions", function () {
                 assert.deepStrictEqual(surfaces(first.tokenizeForSentence("令和元年")), ["令和", "元年"]);
                 assert.deepStrictEqual(surfaces(first.tokenize("令和元年。")), ["令和", "元年", "。"]);
                 assert.deepStrictEqual(surfaces(withoutVersion.tokenizeForSentence("令和元年")), ["令", "和", "元年"]);
+                // the remembered tokens of one version are not returned by the tokenizer of another one
+                assert.deepStrictEqual(surfaces(withoutVersion.tokenize("令和元年。")), ["令", "和", "元年", "。"]);
             });
         });
     });

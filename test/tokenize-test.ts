@@ -114,13 +114,40 @@ describe("getTokenizer", function () {
         const tokenizer = await getTokenizer();
         assert.deepStrictEqual(Object.keys(tokenizer).sort(), ["tokenize", "tokenizeForSentence"]);
     });
-    it("tokenizeForSentence returns the tokens of tokenize directly, as a new array for each call", async function () {
+    it("tokenizeForSentence returns the tokens of tokenize, and the same array for the same text", async function () {
         const tokenizer = await getTokenizer();
         const first = tokenizer.tokenizeForSentence("黒文字");
-        const second = tokenizer.tokenizeForSentence("黒文字");
         assert.deepStrictEqual(first, await tokenize("黒文字"));
-        assert.notStrictEqual(first, second);
-        assert.deepStrictEqual(first, second);
+        assert.strictEqual(tokenizer.tokenizeForSentence("黒文字"), first);
+    });
+    it("tokenizeForSentence shares the remembered tokens with tokenize", async function () {
+        const tokenizer = await getTokenizer();
+        const text = "トークナイザーのキャッシュを共有する文";
+        const remembered = await tokenize(text);
+        assert.strictEqual(tokenizer.tokenizeForSentence(text), remembered);
+        const other = "トークナイザーが先に解析する文";
+        assert.strictEqual(await tokenize(other), tokenizer.tokenizeForSentence(other));
+    });
+    it("tokenize of the tokenizer remembers its own tokens, apart from tokenizeForSentence", async function () {
+        const tokenizer = await getTokenizer();
+        const text = "句読点で区切る、キャッシュのある文。";
+        const first = tokenizer.tokenize(text);
+        assert.strictEqual(tokenizer.tokenize(text), first);
+        assert.notStrictEqual(tokenizer.tokenizeForSentence(text), first);
+    });
+    it("resolves with a tokenizer that analyzes every text again with noCacheTokenize", async function () {
+        const tokenizer = await getTokenizer({ noCacheTokenize: true });
+        assert.notStrictEqual(tokenizer, await getTokenizer());
+        assert.strictEqual(await getTokenizer({ noCacheTokenize: true }), tokenizer);
+        const text = "キャッシュを使わないトークナイザー";
+        const remembered = await tokenize(text);
+        const first = tokenizer.tokenizeForSentence(text);
+        assert.notStrictEqual(first, remembered);
+        assert.deepStrictEqual(first, remembered);
+        assert.notStrictEqual(tokenizer.tokenizeForSentence(text), first);
+        assert.notStrictEqual(tokenizer.tokenize(text), tokenizer.tokenize(text));
+        // the remembered tokens are not changed
+        assert.strictEqual(await tokenize(text), remembered);
     });
     it("returns the same tokens before and after a text that needs a large table of candidates", async function () {
         const tokenizer = await getTokenizer();

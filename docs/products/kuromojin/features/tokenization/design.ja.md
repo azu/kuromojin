@@ -99,14 +99,21 @@ U+0000 は、辞書がそれに与える種類を持つ文字で、単語の問�
 マップはモジュールの変数なので、インストールされた kuromojin のコピーごとに 1 つあり、1 つのコピーのすべての呼び出し元が共有します。
 保存した配列はコピーも凍結もしません。呼び出し元による変更を防いでいるのは、結果の読み取り専用の型です。
 
+`getTokenizer(options)` は、解析の手前に同じ検索を置いたトークナイザーで解決します。
+その `tokenizeForSentence(text)` は `tokenize` のマップを使うので、2 つはテキストのトークンを共有します。
+その `tokenize(text)` は同じ種類の 2 つ目のマップを使います。分けた部分のトークンは、テキスト全体のトークンと異なるためです。
+2 つ目のマップも 1,000 個のテキストを保持します。
+このトークナイザーは辞書のバージョンごとに 1 つあります。
+`noCacheTokenize: true` のときは、`getTokenizer` は、どのテキストも解析してマップを使わない、そのバージョンのトークナイザーで解決します。
+
 ## アーキテクチャとシーケンス図
 
-図は不要です。解析は、テキストを 1 回たどり、選ばれた分け方を 1 回さかのぼるだけです。`tokenize` は、その手前でマップを 1 回引きます。
+図は不要です。解析は、テキストを 1 回たどり、選ばれた分け方を 1 回さかのぼるだけです。`tokenize` とトークナイザーは、その手前でマップを 1 回引きます。
 
 ## データモデルと ER 図
 
 トークンは、[トークンの項目](requirements.ja.md#トークンの項目) で説明するオブジェクトです。
-キャッシュは 1 つのマップで、キーがテキスト、値がそのテキストのトークンの配列です。配列は、テキストを解析した辞書のバージョンごとに 1 つあります。
+キャッシュは 2 つのマップで、キーがテキスト、値がそのテキストのトークンの配列です。配列は、テキストを解析した辞書のバージョンごとに 1 つあります。1 つのマップはテキスト全体のトークンを持ち、もう 1 つはトークナイザーの `tokenize` で分けた部分のトークンを持ちます。
 候補の表は 1 回の解析の間だけ意味を持ち、[1 回の解析のメモリ](#1-回の解析のメモリ) で説明します。
 
 ## API とインターフェース
@@ -116,7 +123,7 @@ kuromojin は 2 つの関数と 4 つの型を公開します。
 - `tokenize(text: string, options?: getTokenizerOption): Promise<Readonly<Readonly<KuromojiToken>[]>>`
 - `getTokenizer(options?: getTokenizerOption): Promise<Tokenizer>`
 - `KuromojiToken` はトークンの型である。未知語のトークンは `reading` と `pronunciation` を持たないが、型はこの 2 つを `string` と宣言する。
-- `Tokenizer` は `tokenize(text: string): KuromojiToken[]` と `tokenizeForSentence(text: string): KuromojiToken[]` を持つ。
+- `Tokenizer` は `tokenize(text: string): Readonly<Readonly<KuromojiToken>[]>` と `tokenizeForSentence(text: string): Readonly<Readonly<KuromojiToken>[]>` を持つ。
 - `getTokenizerOption` は、どれも省略できる `dicPath?: string`、`dictionaryVersion?: DictionaryVersion`、`noCacheTokenize?: boolean` を持つ。
 - `DictionaryVersion` は `dictionaryVersion` の値の型である。パッケージの辞書が持つバージョンの日付のユニオン型である。
 

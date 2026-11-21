@@ -6,7 +6,7 @@
 
 Tokenization returns the tokens of a Japanese text.
 A caller uses `tokenize(text)` to get the tokens with one call, or `getTokenizer()` to get the tokenizer and analyze texts synchronously.
-`tokenize(text)` also remembers the tokens of each text, so that callers that ask for the same text share one analysis.
+`tokenize(text)` and the tokenizer also remember the tokens of each text, so that callers that ask for the same text share one analysis.
 The parent Product is [kuromojin](../../product.md).
 
 ### Scope
@@ -108,7 +108,19 @@ Scenario: When the tokenizer analyzes a text, it returns the tokens directly
 
 - Given: The tokenizer that `getTokenizer` resolved with
 - When: `tokenizeForSentence` is called with the text `黒文字`
-- Then: It returns an array with the same tokens as `tokenize` of kuromojin, and each call returns a new array
+- Then: It returns the same array as `tokenize` of kuromojin
+
+Scenario: When the tokenizer analyzes the same text again, the same tokens are returned without analysis
+
+- Given: A text that the tokenizer has already analyzed with `tokenizeForSentence` or `tokenize`
+- When: The same function is called with the same text
+- Then: It returns the same array as the first call
+
+Scenario: When the cache is turned off, the tokenizer analyzes every text again
+
+- Given: The tokenizer that `getTokenizer` resolved with for `noCacheTokenize: true`
+- When: `tokenizeForSentence` is called twice with the same text
+- Then: Each call returns a new array that has equal tokens, and the remembered tokens are not changed
 
 ## KPIs
 
@@ -206,17 +218,20 @@ The Promise is rejected. See [Dictionary](../dictionary/requirements.md).
 
 **Overview:** `getTokenizer(options)` returns the tokenizer after the dictionary is loaded.
 
-**Input:** Optionally `options` with `dicPath` and `dictionaryVersion`. See [Dictionary](../dictionary/requirements.md) and [Dictionary versions](../dictionary-versions/requirements.md).
+**Input:** Optionally `options` with `dicPath`, `dictionaryVersion`, and `noCacheTokenize`. `noCacheTokenize: true` asks for a tokenizer that does not reuse tokens. See [Dictionary](../dictionary/requirements.md) and [Dictionary versions](../dictionary-versions/requirements.md).
 
-**Output:** A Promise of the tokenizer. Every call with the same dictionary version resolves with the same tokenizer.
+**Output:** A Promise of the tokenizer. Every call with the same dictionary version and the same `noCacheTokenize` resolves with the same tokenizer.
 
 #### Applicable conditions
 
-The tokenizer has two synchronous functions that take a text and return a new array of tokens.
-They do not remember tokens, and the tokenizer has no other public member.
+The tokenizer has two synchronous functions that take a text and return an array of tokens.
+The tokenizer has no other public member.
 
-- `tokenizeForSentence(text)` analyzes the whole text as one piece. `tokenize` of kuromojin uses it.
-- `tokenize(text)` splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces in order.
+- `tokenizeForSentence(text)` analyzes the whole text as one piece. It shares the remembered tokens with `tokenize` of kuromojin, so a text that either one has analyzed is not analyzed again by the other.
+- `tokenize(text)` splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces in order. Its tokens differ from the ones of the whole text, so it remembers them apart from `tokenizeForSentence`, for the 1,000 most recently used texts too.
+
+Both functions return the remembered array for a text and a dictionary version, as `tokenize` of kuromojin does, and the type of the result is read-only.
+With `noCacheTokenize: true`, the functions analyze every text again, return a new array, and do not read or change the remembered tokens.
 
 #### Exceptional behavior
 
@@ -226,13 +241,13 @@ None. The tokenizer exists only after the dictionary is loaded, and its function
 
 ### Required data
 
-- **Text:** The string to analyze. `tokenize` keeps it in memory as the key of the remembered tokens until the process ends or 1,000 newer texts replace it. It is not written to a file and not sent anywhere.
+- **Text:** The string to analyze. `tokenize` and the tokenizer keep it in memory as the key of the remembered tokens until the process ends or 1,000 newer texts replace it. The texts of `tokenize` of the tokenizer are counted apart from the others. A text is not written to a file and not sent anywhere.
 - **Tokens:** The result of the analysis. They are kept in memory together with the text.
 - **Dictionary:** The data that the analysis uses. See [Dictionary](../dictionary/requirements.md).
 
 ### Relationships
 
-One text and one dictionary version have one array of tokens.
+One text and one dictionary version have one array of tokens of the whole text, and one array of tokens of the pieces of `tokenize` of the tokenizer.
 
 ### Personal information
 
