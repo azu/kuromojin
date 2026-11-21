@@ -19,14 +19,22 @@ export type KuromojiToken = Token;
 export type { DictionaryVersion };
 export type Tokenizer = {
     /**
-     * Split the text after each `、` and `。`, analyze each piece, and return the tokens of all pieces.
-     * The tokens of a text are remembered, and a call with the same text returns the same array.
-     * @deprecated Use `tokenizer.tokenizeForSentence(text)`, or `tokenize(text)` of kuromojin. They analyze the whole text as one piece.
-     * This function gives different tokens for some texts, and it exists only for compatibility with `tokenize` of the tokenizer of kuromoji.js.
+     * @deprecated Use `tokenizer.tokenizeForSentence(text)` instead, or `tokenize(text)` of kuromojin.
+     *
+     * This function exists only for compatibility with kuromoji.js.
+     * It splits the text after each `、` and `。` before the analysis,
+     * so its tokens differ from the tokens of the whole text for some texts.
+     *
+     * ```js
+     * // Before
+     * const tokens = tokenizer.tokenize(text);
+     * // After
+     * const tokens = tokenizer.tokenizeForSentence(text);
+     * ```
      */
     tokenize: (text: string) => Readonly<Readonly<KuromojiToken>[]>;
     /**
-     * Analyze the whole text as one piece.
+     * Analyze the whole text as one piece, as `tokenize(text)` of kuromojin does.
      * The tokens of a text are shared with `tokenize` of kuromojin, and a call with the same text returns the same array.
      */
     tokenizeForSentence: (text: string) => Readonly<Readonly<KuromojiToken>[]>;

@@ -90,12 +90,25 @@ const nounCounts = sentences.map((sentence) => {
 
 The tokenizer has two functions and nothing else.
 
-- `tokenizer.tokenizeForSentence(text)` analyzes the whole text as one piece. It returns the same array as `tokenize(text)` of kuromojin, because the two share the remembered tokens.
-- `tokenizer.tokenize(text)` is **deprecated**. It is a different analysis: it splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces. `word_position` still counts from the start of the text. It exists only for compatibility with `tokenize` of the tokenizer of kuromoji.js. Use `tokenizer.tokenizeForSentence(text)` or `tokenize(text)` in new code.
+| Function | Status | What it does |
+| --- | --- | --- |
+| `tokenizer.tokenizeForSentence(text)` | Use this | Analyzes the whole text as one piece. It returns the same array as `tokenize(text)` of kuromojin, because the two share the remembered tokens. |
+| `tokenizer.tokenize(text)` | **Deprecated** | Splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces. `word_position` still counts from the start of the text. |
 
-:warning: The names are confusing: `tokenize` of kuromojin is the same as `tokenizeForSentence` of the tokenizer, not as `tokenize` of the tokenizer.
+#### Deprecated: `tokenizer.tokenize(text)`
 
-For example, the two functions of the tokenizer give different tokens for `なぜなら` in this text.
+`tokenizer.tokenize(text)` exists only for compatibility with `tokenize` of the tokenizer of kuromoji.js. Do not use it in new code.
+
+- **Why:** Its tokens differ from the tokens of `tokenize(text)` of kuromojin for some texts, because of the split. Rules are written against the tokens of the whole text.
+- **The name is a trap:** `tokenize` of kuromojin is the same as `tokenizeForSentence` of the tokenizer, not as `tokenize` of the tokenizer.
+- **What to use:** `tokenizer.tokenizeForSentence(text)`, or `await tokenize(text)`.
+
+```diff
+- const tokens = tokenizer.tokenize(text);
++ const tokens = tokenizer.tokenizeForSentence(text);
+```
+
+For example, the two functions give different tokens for `なぜなら` in this text.
 
 ```js
 const text = "あります。なぜならJavaScriptは";
