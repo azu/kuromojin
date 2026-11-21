@@ -11,8 +11,8 @@ import {
     dictionaryVersionError
 } from "./analyzer/DictionaryVersions";
 import { loadDictionary } from "./analyzer/loader/loadDictionary";
-import { isNode } from "./analyzer/loader/platform";
 import type { Token } from "./analyzer/Token";
+import { defaultDictionaryPath } from "./defaultDictionaryPath";
 import { LeastRecentlyUsedMap } from "./LeastRecentlyUsedMap";
 
 export type KuromojiToken = Token;
@@ -88,14 +88,15 @@ const getDictionaryPath = (options?: getTokenizerOption): string => {
     ) {
         return kuromojinGlobal.dicPath;
     }
-    if (isNode()) {
-        // the dictionary of the package: lib/../dict/kuromojin.dict
-        const path = require("path") as typeof import("path");
-        return path.join(__dirname, "..", "dict", "kuromojin.dict");
+    // The dictionary of the package. A bundler for a browser gives its URL: see defaultDictionaryPath.browser.mjs
+    const packageDictionaryPath = defaultDictionaryPath();
+    if (packageDictionaryPath !== undefined) {
+        return packageDictionaryPath;
     }
     throw new Error(
         "kuromojin needs a dictionary path in a browser: " +
-            "pass `dicPath` or set `globalThis.kuromojin.dicPath` to the URL of the dictionary."
+            "pass `dicPath` or set `globalThis.kuromojin.dicPath` to the URL of the dictionary. " +
+            "A bundler that supports `new URL(path, import.meta.url)`, such as Vite or webpack, gives it by default."
     );
 };
 

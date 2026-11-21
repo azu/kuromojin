@@ -1,7 +1,7 @@
 {
   "name": "kuromojin",
   "version": "3.1.0",
-  "description": "Japanese morphological analyzer with a Promise API and a cache, compatible with the tokens of kuromoji.js",
+  "description": "Japanese morphological analyzer with a bundled dictionary and cached tokenize().",
   "keywords": [
     "kuromoji",
     "kuromoji.js",
@@ -30,13 +30,14 @@
   "browser": {
     "fs": false,
     "path": false,
-    "zlib": false
+    "zlib": false,
+    "./lib/defaultDictionaryPath.js": "./lib/defaultDictionaryPath.browser.mjs"
   },
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "build": "tsc -p .",
+    "build": "tsc -p . && tsc -p tsconfig.browser.json",
     "build:dict": "tsc -p scripts && node scripts-build/scripts/build-dict.js",
     "compare": "node benchmark/compare.js",
     "cp-public": "mkdir -p public/dict && cp node_modules/kuromoji/dict/*.dat.gz dict/kuromojin.dict public/dict/",
@@ -48,6 +49,7 @@
     "preview": "npm run cp-public && vite preview",
     "profile": "node benchmark/profile.js",
     "test": "tsc -p test && pnpm run build && vitest run",
+    "test:e2e": "tsc -p e2e && pnpm run build && vitest run -c vitest.e2e.config.mts",
     "watch": "tsc -p . --watch",
     "web:build": "npm run cp-public && vite build"
   },
@@ -55,10 +57,12 @@
     "@types/node": "^22.20.5",
     "kuromoji": "0.1.2",
     "lint-staged": "^17.6.1",
+    "playwright": "1.63.0",
     "prettier": "^3.10.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.1"
+    "vitest": "^5.1.1",
+    "webpack": "^5.113.0"
   },
   "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0",
   "email": "azuciao@gmail.com",

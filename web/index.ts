@@ -1,6 +1,8 @@
 /// <reference types="vite/client" />
 import { getTokenizer, Tokenizer } from "../src/index";
 // The bundler copies the dictionary of the package into the output and gives its URL.
+// This page imports the source of kuromojin, not the package, so the "browser" field of package.json
+// does not give the default dictionary path here, and the page gives it.
 // The URL keeps the ending `.dict`, which tells kuromojin the format of the dictionary.
 import dictionaryUrl from "../dict/kuromojin.dict?url";
 

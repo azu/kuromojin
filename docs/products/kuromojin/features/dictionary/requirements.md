@@ -6,7 +6,8 @@
 
 The dictionary feature finds the dictionary that the analysis uses and loads it once for all callers.
 In Node.js, a caller does not have to do anything: the dictionary that is part of the kuromojin package is used.
-In a browser, the page tells kuromojin the URL of the dictionary.
+In a page built with a bundler that copies the files that a module names, such as Vite or webpack, the dictionary of the package is used without a setting too.
+In any other browser setup, the page tells kuromojin the URL of the dictionary.
 The parent Product is [kuromojin](../../product.md).
 
 ### Scope
@@ -44,6 +45,24 @@ Scenario: When the first call has options without a dictionary path, the diction
 - Given: The same installation, and the dictionary not loaded yet
 - When: `tokenize` is called with a text and `{ noCacheTokenize: true }`
 - Then: The Promise resolves with the tokens of the text, analyzed with the dictionary of the package
+
+### Use Japanese rules in a page built with a bundler without setting up a dictionary
+
+As a developer who builds a page with textlint and Japanese rules with a bundler such as Vite or webpack, I want the dictionary to be found without any setting so that installing the rules is enough, as it is in Node.js.
+
+**Acceptance criteria:**
+
+Scenario: When a page is built with a bundler, the dictionary of the package is used
+
+- Given: A page that uses kuromojin, also through a rule written in CommonJS, built with a bundler that supports `new URL(path, import.meta.url)`, and no `dicPath` option and no `globalThis.kuromojin`
+- When: The page calls `getTokenizer` or `tokenize`
+- Then: The build has a copy of the dictionary file of the package, and the page requests the URL of that copy and resolves with a tokenizer
+
+Scenario: When a page built with a bundler gives a dictionary path, that path is used
+
+- Given: The same page, with `globalThis.kuromojin.dicPath` or the `dicPath` option set
+- When: The page calls `getTokenizer`
+- Then: The dictionary is requested from that path, and not from the copy of the build
 
 ### Load the dictionary once for all rules
 
@@ -160,15 +179,17 @@ The first of these that exists is used.
 1. `dicPath` of the `options` of the call
 2. The environment variable `KUROMOJIN_DIC_PATH`
 3. `globalThis.kuromojin.dicPath`
-4. The file `kuromojin.dict` in the `dict` directory of the kuromojin package
+4. The file `kuromojin.dict` in the `dict` directory of the kuromojin package, when kuromojin can find it
 
 A source that is not set is skipped. So `options` without `dicPath`, for example with only `noCacheTokenize`, leave the choice to the other three.
 
 The third one is read from the global object of the environment, so it works in a page, in a worker, and in Node.js.
 In a page, the global object is `window`, so `window.kuromojin.dicPath` is the same setting.
 
-The fourth one needs the file system of Node.js.
-In a browser, the dictionary path has to be given by `options` or by `globalThis.kuromojin.dicPath`.
+In Node.js, kuromojin finds the fourth one with the file system.
+In a page built with a bundler that supports `new URL(path, import.meta.url)`, such as Vite or webpack, the bundler copies the file into the build and kuromojin uses the URL of the copy.
+The page is served together with the copy, so no other server is contacted.
+In any other browser setup, for example a bundler without that support such as esbuild, or a page that loads kuromojin without a bundler, the dictionary path has to be given by `options` or by `globalThis.kuromojin.dicPath`.
 The `dict` directory is published in the npm package, so the URL of its file on a server that serves the files of the package can be that path.
 The file is at the path `kuromojin/dict/kuromojin.dict` of the package, and this path is the same in every release of one major version. So a page that is built with a bundler can ask the bundler for the URL of that file and give it as the dictionary path. The [online playground](../playground/requirements.md) is such a page.
 
@@ -176,7 +197,7 @@ The file is at the path `kuromojin/dict/kuromojin.dict` of the package, and this
 
 ##### No dictionary path in a browser
 
-When a browser has none of the first three, the load fails as described under [Dictionary that cannot be loaded](#dictionary-that-cannot-be-loaded).
+When a browser has none of the four, the load fails as described under [Dictionary that cannot be loaded](#dictionary-that-cannot-be-loaded).
 
 ### Load the dictionary
 
@@ -239,7 +260,7 @@ None. The dictionary does not contain data about the users of kuromojin.
 ## External service dependencies
 
 None. In Node.js the dictionary is read from the installed package.
-In a browser the page chooses the server that has the dictionary files, and kuromojin does not name one.
+In a browser the dictionary comes from the server of the page when a bundler copied it, or from the server that the page chooses. kuromojin does not name a server.
 
 ## Security considerations
 
