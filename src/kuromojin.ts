@@ -9,7 +9,7 @@ import {
     createDictionaryView,
     DictionaryVersions,
     DictionaryView,
-    resolveDictionaryVersion
+    dictionaryVersionError
 } from "./analyzer/DictionaryVersions";
 import { loadDictionary } from "./analyzer/loader/loadDictionary";
 import { isNode } from "./analyzer/loader/platform";
@@ -36,9 +36,10 @@ export type getTokenizerOption = {
      */
     dicPath?: string;
     /**
-     * The dictionary version of the call, as a date written as YYYY-MM-DD.
-     * The call gets the dictionary with the changes of every version up to the date.
+     * The dictionary version of the call: the date of a version, written as YYYY-MM-DD.
+     * The call gets the dictionary with the changes of every version up to this one.
      * The type has the dates of the versions of the dictionary of the package.
+     * A date that is not the date of a version of the loaded dictionary rejects the call.
      * Default: the default dictionary, which does not change within a major version of kuromojin.
      */
     dictionaryVersion?: DictionaryVersion;
@@ -122,14 +123,14 @@ class LoadedDictionary {
     }
 
     /**
-     * The date of the version that `dictionaryVersion` means.
-     * It throws when the value cannot be used with this dictionary.
+     * The date of the version of a call.
+     * It throws when `dictionaryVersion` is not the date of a version of this dictionary.
      */
     resolveVersion(dictionaryVersion: unknown): string {
         if (dictionaryVersion === undefined) return this.defaultVersion;
-        // The date of a version needs no check and no search. The type DictionaryVersion has only these dates.
+        // One lookup: no check of the form and no comparison of dates for a version of the dictionary
         if (this.versionDates.has(dictionaryVersion)) return dictionaryVersion as string;
-        return resolveDictionaryVersion(dictionaryVersion, this.dictionary.versions);
+        throw dictionaryVersionError(dictionaryVersion, this.dictionary.versions);
     }
 
     /**

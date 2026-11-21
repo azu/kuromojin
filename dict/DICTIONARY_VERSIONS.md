@@ -4,7 +4,8 @@ This file lists the dictionary versions of the `kuromojin.dict` file in this dir
 `scripts/build-dict.ts` writes it from `dict-source/versions.csv`, so do not edit it.
 
 A caller of `tokenize` or `getTokenizer` chooses a version with the option `dictionaryVersion`,
-a date written as `YYYY-MM-DD`. It gets the dictionary with the changes of every version up to that date.
+the date of a version written as `YYYY-MM-DD`. It gets the dictionary with the changes of every version up to that one.
+A date that is not the date of a version in this file is rejected.
 A call without the option uses the default version.
 
 ## 2007-08-01

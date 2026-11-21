@@ -49,10 +49,10 @@ describe("dictionary versions", function () {
                 assert.deepStrictEqual(surfaces(await kuromojin.tokenize("令和元年")), ["令", "和", "元年"]);
             });
         });
-        it("gives the changes up to the date when a call names a date between two versions", async function () {
+        it("does not give the changes of a later version when a call names a version", async function () {
             await withTestDictionary(async () => {
                 const tokens = await kuromojin.tokenize("令和にスマホを使う", {
-                    dictionaryVersion: version("2027-06-15")
+                    dictionaryVersion: version("2027-04-01")
                 });
                 const defaultTokens = await kuromojin.tokenize("スマホを使う");
                 const reiwa = tokens.find((token) => token.surface_form === "令和");
@@ -131,21 +131,24 @@ describe("dictionary versions", function () {
                 assert.deepStrictEqual(surfaces(results[2]), ["令", "和", "元年"]);
             });
         });
-        it("returns the same array for the same text and a date that means the same version", async function () {
+        it("returns the same array for the same text and the same version", async function () {
             await withTestDictionary(async () => {
                 const first = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") });
-                const second = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-06-15") });
+                const second = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") });
                 assert.strictEqual(second, first);
+                const other = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-10-01") });
+                assert.notStrictEqual(other, first);
+                assert.deepStrictEqual(other, first);
             });
         });
         it("resolves with one tokenizer for each version", async function () {
             await withTestDictionary(async () => {
                 const first = await kuromojin.getTokenizer({ dictionaryVersion: version("2027-04-01") });
                 const second = await kuromojin.getTokenizer({ dictionaryVersion: version("2027-04-01") });
-                const sameVersion = await kuromojin.getTokenizer({ dictionaryVersion: version("2027-09-30") });
+                const otherVersion = await kuromojin.getTokenizer({ dictionaryVersion: version("2027-10-01") });
                 const withoutVersion = await kuromojin.getTokenizer();
                 assert.strictEqual(second, first);
-                assert.strictEqual(sameVersion, first);
+                assert.notStrictEqual(otherVersion, first);
                 assert.notStrictEqual(withoutVersion, first);
                 assert.deepStrictEqual(surfaces(first.tokenizeForSentence("令和元年")), ["令和", "元年"]);
                 assert.deepStrictEqual(surfaces(first.tokenize("令和元年。")), ["令和", "元年", "。"]);
@@ -167,7 +170,7 @@ describe("dictionary versions", function () {
         });
         it("rejects a value that is not a date", async function () {
             await withTestDictionary(async () => {
-                const values: unknown[] = ["latest", "2027-4-1", "2027-02-30", "20270401", 20270401, null, ""];
+                const values: unknown[] = ["latest", "2027-4-1", "20270401", " 2027-04-01", 20270401, null, ""];
                 for (const value of values) {
                     await assert.rejects(
                         kuromojin.tokenize("令和元年", { dictionaryVersion: value as DictionaryVersion }),
@@ -192,12 +195,22 @@ describe("dictionary versions", function () {
                 ["string", "string", "string"]
             );
         });
-        it("rejects a date earlier than the base dictionary", async function () {
+        it("rejects a date that is not the date of a version, and names the versions", async function () {
             await withTestDictionary(async () => {
-                await assert.rejects(
-                    kuromojin.tokenize("令和元年", { dictionaryVersion: version("2007-07-31") }),
-                    /earlier than the base dictionary "2007-08-01"/
-                );
+                // a date between two versions, a date before the base dictionary, and a date that no calendar has
+                for (const date of ["2027-06-15", "2007-07-31", "2027-02-30"]) {
+                    const expected = {
+                        message: `dictionaryVersion "${date}" is not a version of the loaded dictionary. Its versions are "2007-08-01", "2027-04-01", "2027-10-01".`
+                    };
+                    await assert.rejects(
+                        kuromojin.tokenize("令和元年", { dictionaryVersion: version(date) }),
+                        expected
+                    );
+                    await assert.rejects(kuromojin.getTokenizer({ dictionaryVersion: version(date) }), expected);
+                }
+                // the error does not affect the versions of the dictionary
+                const tokens = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") });
+                assert.deepStrictEqual(surfaces(tokens), ["令和", "元年"]);
             });
         });
         it("rejects a version with a dictionary of kuromoji.js, and a call without a version resolves", async function () {

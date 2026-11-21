@@ -6,7 +6,7 @@
 
 A dictionary version lets a caller choose the dictionary as of a date.
 Every change to the words of the dictionary belongs to a version, and a version is named by a date.
-A caller that names a date gets the dictionary with all the changes up to that date. A caller that names none gets the default dictionary, which does not change within a major version.
+A caller that names a version gets the dictionary with all the changes up to that version. A caller that names none gets the default dictionary, which does not change within a major version.
 So the dictionary can get new words without changing the tokens of any caller that did not ask for them.
 The parent Product is [kuromojin](../../product.md).
 
@@ -50,10 +50,10 @@ Scenario: When a call names no version, the tokens are those of the default dict
 - When: `tokenize` is called with the text `令和元年` and no `dictionaryVersion`
 - Then: The Promise resolves with the tokens `令`, `和`, and `元年`
 
-Scenario: When a call names a date between two versions, it gets the changes up to that date
+Scenario: When a call names a version, it does not get the changes of a later version
 
 - Given: The dictionary for tests
-- When: `tokenize` is called with the text `令和にスマホを使う` and `{ dictionaryVersion: "2027-06-15" }`
+- When: `tokenize` is called with the text `令和にスマホを使う` and `{ dictionaryVersion: "2027-04-01" }`
 - Then: The tokens have `令和` as a known word, and `スマホ` is an unknown word as with the default dictionary
 
 Scenario: When a call names the newest version, it gets the changes of all versions
@@ -89,7 +89,7 @@ Scenario: When two callers name different versions, each gets the tokens of its 
 Scenario: When the same text is tokenized again with the same version, the same tokens are returned without analysis
 
 - Given: A text that `tokenize` has already analyzed with `{ dictionaryVersion: "2027-04-01" }`
-- When: `tokenize` is called with the same text and a date that means the same version, such as `2027-06-15`
+- When: `tokenize` is called with the same text and the same version
 - Then: The Promise resolves with the same array as the first call
 
 Scenario: When the tokenizer of a version is asked for twice, it is the same tokenizer
@@ -109,6 +109,12 @@ Scenario: When the date is later than the newest version of the dictionary, the 
 - Given: The dictionary for tests
 - When: `tokenize` is called with a text and `{ dictionaryVersion: "2028-01-01" }`
 - Then: The Promise is rejected with an error that names `2028-01-01` and the newest version `2027-10-01`, and a later call with `2027-10-01` resolves with tokens
+
+Scenario: When the date is not the date of a version, the call is rejected
+
+- Given: The dictionary for tests
+- When: `tokenize` is called with a text and `{ dictionaryVersion: "2027-06-15" }`, a date between two versions
+- Then: The Promise is rejected with an error that names `2027-06-15` and the versions of the dictionary: `2007-08-01`, `2027-04-01`, and `2027-10-01`
 
 Scenario: When the value is not a date, the call is rejected
 
@@ -154,7 +160,7 @@ Scenario: When a release has a new version, the list of versions tells its date 
 
 **Overview:** The option `dictionaryVersion` of `tokenize` and `getTokenizer` names the dictionary version of the call.
 
-**Input:** A date as a string in the form `YYYY-MM-DD`, for example `"2027-04-01"`.
+**Input:** The date of a version, as a string in the form `YYYY-MM-DD`, for example `"2027-04-01"`.
 
 **Output:** `tokenize` returns the tokens of the text with the dictionary of that version. `getTokenizer` returns a tokenizer that analyzes with the dictionary of that version.
 
@@ -166,8 +172,8 @@ A version is a date and a set of changes to the words of the dictionary.
 The dictionary of a version is the base dictionary with the changes of every version up to and including its date.
 The base dictionary is the dictionary with the words of kuromoji.js 0.1.2, and it is a version too: `2007-08-01`, the date of the IPADIC data that it is built from.
 
-A call can name any date from the date of the base dictionary to the date of the newest version of the loaded dictionary.
-A date between two versions means the earlier one of them.
+A call names a version by its date. It can name the versions of the loaded dictionary, which the list of versions has.
+Another date is not a version, also when it is between the dates of two versions.
 
 ##### Default version
 
@@ -196,7 +202,7 @@ The version belongs to the call. Callers with different versions get their own t
 The dictionary is loaded once for all of them, as described in [Dictionary](../dictionary/requirements.md).
 
 `tokenize` remembers tokens for a text and a version together, so the tokens of one version are never returned for another one.
-`getTokenizer` resolves with one tokenizer for each version: every call with dates that mean the same version gets the same tokenizer.
+`getTokenizer` resolves with one tokenizer for each version: every call with the same version gets the same tokenizer.
 
 ##### Dictionary from a dictionary path
 
@@ -210,9 +216,9 @@ A dictionary of kuromoji.js has no versions, and only calls without `dictionaryV
 
 The Promise of the call is rejected with an error that tells the reason in each of these cases.
 
-- The value is not a string in the form `YYYY-MM-DD`, or is not a date of the calendar.
+- The value is not a string in the form `YYYY-MM-DD`.
 - The date is later than the newest version of the loaded dictionary. The error names that version, because the usual reason is an installed kuromojin that is older than the rule expects.
-- The date is earlier than the date of the base dictionary.
+- The date is not the date of a version of the loaded dictionary. The error names the versions of the dictionary.
 - The loaded dictionary is a dictionary of kuromoji.js.
 
 The error belongs to that call only. Other calls, with other versions or with none, are not affected.

@@ -148,7 +148,7 @@ They are for trials: they change when the website is built from a newer kuromoji
 
 The words of the dictionary change in dictionary versions. A dictionary version is the dictionary as of a date.
 
-- A call with `dictionaryVersion` gets the dictionary with the changes of every version up to that date.
+- A call with `dictionaryVersion` names a version by its date, and gets the dictionary with the changes of every version up to that one.
 - A call without `dictionaryVersion` gets the default dictionary, which does not change within a major version of kuromojin.
 
 So an update of kuromojin does not change the tokens of your code, and you choose when your code gets newer words.
@@ -162,7 +162,7 @@ const tokens = await tokenize(text, { dictionaryVersion: "2007-08-01" });
 [dict/DICTIONARY_VERSIONS.md](dict/DICTIONARY_VERSIONS.md) lists the versions and their changes.
 
 - The type `DictionaryVersion` has the dates of the versions of the dictionary of the package, so TypeScript takes only these dates.
-- At runtime, a date between two versions means the earlier one.
+- A date that is not the date of a version is rejected, also when it is between the dates of two versions.
 - A date later than the newest version of the installed kuromojin is rejected, because the installed kuromojin does not have the words that the caller expects.
 - `dictionaryVersion` is rejected with a dictionary of kuromoji.js, which has no versions.
 - Callers with different versions share one loaded dictionary.

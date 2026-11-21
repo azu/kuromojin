@@ -37,57 +37,39 @@ export type DictionaryView = {
 /** The number in `wordEntries` of a view for an entry that the view does not see. No entry has this number. */
 const NOT_SEEN = 0x7fffffff;
 
-const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-const isDate = (value: unknown): value is string => {
-    if (typeof value !== "string") return false;
-    const match = DATE.exec(value);
-    if (!match) return false;
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    // Date.UTC treats the years 0 to 99 as 1900 to 1999
-    date.setUTCFullYear(year);
-    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
-};
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Check the `dictionaryVersion` of a call and return the date of the version that it means:
- * the newest version that is not later than the date.
+ * The error of a call whose `dictionaryVersion` is not the date of a version of the loaded dictionary.
+ * It tells the reason, so it is made only after the value was not found in the versions.
  * Dates written as YYYY-MM-DD are in the order of their strings.
+ * @param versions the versions of the loaded dictionary, or null for a dictionary of kuromoji.js
  */
-export function resolveDictionaryVersion(value: unknown, versions: DictionaryVersions | null): string {
+export function dictionaryVersionError(value: unknown, versions: DictionaryVersions | null): Error {
     if (versions === null) {
-        throw new Error(
+        return new Error(
             `dictionaryVersion cannot be used with this dictionary: a dictionary of kuromoji.js has no versions.`
         );
     }
-    if (!isDate(value)) {
-        throw new Error(`dictionaryVersion must be a date written as YYYY-MM-DD: ${JSON.stringify(value)}`);
-    }
-    const base = versions[0].date;
-    if (value < base) {
-        throw new Error(`dictionaryVersion "${value}" is earlier than the base dictionary "${base}".`);
+    if (typeof value !== "string" || !DATE.test(value)) {
+        return new Error(`dictionaryVersion must be a date written as YYYY-MM-DD: ${JSON.stringify(value)}`);
     }
     const newest = versions[versions.length - 1].date;
     if (value > newest) {
-        throw new Error(
+        return new Error(
             `dictionaryVersion "${value}" is later than the newest version "${newest}" of the loaded dictionary. ` +
                 `A newer kuromojin may have this version.`
         );
     }
-    let resolved = base;
-    for (const version of versions) {
-        if (version.date > value) break;
-        resolved = version.date;
-    }
-    return resolved;
+    const dates = versions.map((version) => `"${version.date}"`).join(", ");
+    return new Error(
+        `dictionaryVersion "${value}" is not a version of the loaded dictionary. Its versions are ${dates}.`
+    );
 }
 
 /**
  * The view of a version: the entries up to it, without the entries that the versions up to it remove.
- * @param date date of a version of the dictionary, as resolveDictionaryVersion returns it
+ * @param date date of a version of the dictionary
  */
 export function createDictionaryView(
     dictionary: Dictionary,
