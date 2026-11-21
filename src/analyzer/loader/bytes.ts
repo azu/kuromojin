@@ -13,6 +13,10 @@ export const toInt16Array = (bytes: Uint8Array): Int16Array => {
     const source = aligned(bytes, 2);
     return new Int16Array(source.buffer, source.byteOffset, source.byteLength / 2);
 };
+export const toUint16Array = (bytes: Uint8Array): Uint16Array => {
+    const source = aligned(bytes, 2);
+    return new Uint16Array(source.buffer, source.byteOffset, source.byteLength / 2);
+};
 export const toInt32Array = (bytes: Uint8Array): Int32Array => {
     const source = aligned(bytes, 4);
     return new Int32Array(source.buffer, source.byteOffset, source.byteLength / 4);
@@ -29,16 +33,18 @@ export const readInt32 = (bytes: Uint8Array, index: number): number => {
 };
 
 /**
- * Join numbers that are written as planes: first the lowest byte of every number, then the next byte, and so on.
+ * Read numbers that are written as differences: each one is the difference from the one before, as a zigzag number
+ * of three bytes. The differences are written as planes: first the lowest byte of every difference,
+ * then the next byte of every difference, and then the highest one.
  */
-export const joinPlanes = (planes: Uint8Array, width: number): Uint8Array => {
-    const count = Math.floor(planes.length / width);
-    const output = new Uint8Array(count * width);
-    for (let b = 0; b < width; b++) {
-        const plane = b * count;
-        for (let i = 0, j = b; i < count; i++, j += width) {
-            output[j] = planes[plane + i];
-        }
+export const readDifferences = (planes: Uint8Array): Int32Array => {
+    const count = Math.floor(planes.length / 3);
+    const output = new Int32Array(count);
+    let previous = 0;
+    for (let i = 0, middle = count, high = count * 2; i < count; i++, middle++, high++) {
+        const zigzag = planes[i] | (planes[middle] << 8) | (planes[high] << 16);
+        previous += (zigzag >>> 1) ^ -(zigzag & 1);
+        output[i] = previous;
     }
     return output;
 };

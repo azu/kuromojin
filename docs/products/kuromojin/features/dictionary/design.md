@@ -82,25 +82,34 @@ A file without the signature, or with a version that the code does not know, end
 Each part is its own gzip stream so that the parts are decompressed at the same time.
 In Node.js, `zlib` decompresses them on its worker threads, and the length after decompression lets it write each part into one buffer of the right size.
 In a browser, each part goes through its own `DecompressionStream`.
+Every part starts to decompress when the table is read, and kuromojin builds the tables in an order that needs the largest parts last, so it builds from the parts that are ready while the others are decompressed.
+The connection costs take the longest to decompress, so they are the first part of the file.
 
 ### Data of the format of kuromojin
 
 The parts store the same data as the dictionary of kuromoji.js, arranged so that gzip can compress it well and that loading is a few passes over arrays.
 
-- **Words:** A trie of the UTF-16 code units of the words. The nodes are written in breadth-first order, each with its character, the number of its children, and one bit that tells whether a word ends there. The children of a node are next to each other, so no node stores a position.
-- **Entries of a word:** For each word, the number of its entries and the numbers of the entries. Each number is written as the difference from the one before, in as few bytes as it needs.
+- **Words:** A trie of the UTF-16 code units of the words. The nodes are written in breadth-first order, each with its character, the position of its first child, and one bit that tells whether a word ends there. The children of a node are next to each other in the order of their characters, and they end where the children of the next node start. The words have their numbers in the order of the nodes where they end, so no node stores the number of its word.
+- **Entries of a word:** For each word, the position of its first entry in one list of the numbers of the entries. The entries of a word end where the entries of the next word start.
 - **Costs and ids:** The left id and the word cost of every entry, each in a column of its own. The right id has a column only when it differs from the left id in some entry.
 - **Connection costs:** The matrix of costs, where each cell is written as the difference from the cell on its left.
-- **Features:** For every entry, four numbers: its combination of part of speech and conjugation, its base form, its reading, and its pronunciation. Each number points into a list of distinct strings. A marker replaces the number when the base form equals the word as written, or the pronunciation equals the reading.
+- **Features:** For every entry, its combination of part of speech and conjugation, and its reading. An entry has a base form only when it differs from the word as written, and a pronunciation only when it differs from the reading. One bit for every entry tells whether the entry has the value, and the values are stored without gaps for the entries that have one.
+- **Strings of the features:** The base forms, the readings, and the pronunciations are positions in one list of distinct strings, in the order of the first entry that has each string. A character of the katakana block is one byte, and any other character is three bytes, because almost every reading and pronunciation is written in katakana. The combinations are a short list of their own.
 - **Unknown words:** The classes of characters and the entries of unknown words, as in the dictionary of kuromoji.js.
 
-Numbers of two or four bytes are written as planes: first the lowest byte of every number, then the next byte of every number, and so on.
-Neighboring numbers are often close to each other, so the planes of the higher bytes are long runs of the same value, which gzip makes small.
+A position in a list and the number of an entry are mostly a little larger than the one before.
+Each number of such a column is written as the difference from the one before, in three bytes, and the differences are written as planes: first the lowest byte of every difference, then the next byte of every difference, and then the highest.
+The planes of the higher bytes are long runs of the same value, which gzip makes small.
+The connection costs are written as planes of two bytes in the same way.
+The other numbers of two bytes are written as they are in memory, because gzip makes those columns as small as their planes.
 
 The number of an entry is its position in the dictionary of kuromoji.js.
 `word_id` is computed from it, so it has the same value as in the reference result.
 
-When the dictionary is loaded, kuromojin joins the planes, adds up the differences, and builds a hash table from a node of the trie and a character to the child node.
+When the dictionary is loaded, kuromojin adds up the differences and counts the bits of each bit set, once for every 32 bits.
+It uses the columns that are written as they are in memory from the decompressed bytes, without a copy.
+It builds no table for the lookup in the trie: a lookup searches the children of a node by bisection, and it gets the number of a word by counting the end bits before the node.
+The value of an entry in a column without gaps is found in the same way, by counting the bits before the entry.
 The strings of the features stay in one buffer and are decoded only for the tokens that an analysis returns.
 
 ### Building the dictionary of the package
@@ -211,6 +220,17 @@ It was not chosen, because a worker has no `window`, so a module in a worker cou
 
 The parts could be separate files in the dictionary directory, next to a file that tells the version of the format.
 It was not chosen, because a dictionary is used only as a whole. Separate files need a request for each part in a browser, and a copy or a cache can end up with parts of different versions.
+
+### Build a hash table for the lookup in the trie
+
+The load could build a hash table from a node and a character to the child node, so that a step of a lookup is one probe.
+It was not chosen, because the table is larger than the trie, and building it takes a large part of the load.
+A node has few children on average, so the bisection is not slower than the probe.
+
+### Write the strings of the features as UTF-8
+
+The strings could be UTF-8, which every platform decodes.
+It was not chosen, because a katakana character is three bytes in UTF-8, and the readings and the pronunciations are most of the strings: they would be most of the memory of the features.
 
 ### Compress the whole file as one gzip stream
 
