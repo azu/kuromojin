@@ -208,7 +208,7 @@ const tokenizer = await getTokenizer({ dicPath: dictionaryUrl });
 ```
 
 Without a bundler, give the URL of the file on a CDN that serves the files of npm packages, such as [jsDelivr](https://www.jsdelivr.com/).
-Replace `<version>` with the exact version of kuromojin that your page uses, 3.1.0 or later. The file of a version never changes, so the tokens do not change until you change the URL.
+Replace `<version>` with the exact version of kuromojin that your page uses, 3.1.0 or later: the dictionary is in the package since 3.1.0. The file of a version never changes, so the tokens do not change until you change the URL.
 
 ```js
 import { getTokenizer } from "kuromojin";
@@ -217,12 +217,6 @@ const tokenizer = await getTokenizer({
     dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict"
 });
 ```
-
-- `https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict`
-    - the dictionary of that version of kuromojin. The dictionary is in the package since 3.1.0
-- `https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict`
-    - the dictionary of kuromoji.js 0.1.2
-    - example: https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/base.dat.gz
 
 `globalThis.kuromojin.dicPath` sets the dictionary path for every module that uses kuromojin in the page, such as textlint rules.
 
