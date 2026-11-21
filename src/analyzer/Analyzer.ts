@@ -10,6 +10,14 @@ import type { Token } from "./Token";
 
 const PUNCTUATION = /、|。/;
 const NONE = -1;
+/** The first number of rows of the table of candidates, and of positions of a text */
+const FIRST_ROWS = 4096;
+const FIRST_POSITIONS = 1024;
+/**
+ * A table with more rows or positions than this is not kept after its analysis,
+ * so that one long text does not keep its memory until the process ends.
+ */
+const KEPT_ROWS = 1 << 18;
 /**
  * Split a text after each `、` and `。`, as `tokenize` of kuromoji.js does.
  */
@@ -54,7 +62,7 @@ export class Analyzer {
     private readonly backwardSize: number;
 
     // The candidates are rows of a table, and each column is an array. Row 0 is the start of the text.
-    private capacity = 4096;
+    private capacity = FIRST_ROWS;
     /** number of the entry of a known or unknown word */
     private nodeEntry = new Int32Array(this.capacity);
     /** UTF-16 index of the start. ~start for an unknown word */
@@ -68,8 +76,8 @@ export class Analyzer {
     /** lowest cost of a split that ends with this candidate */
     private nodeTotal = new Float64Array(this.capacity);
     // per UTF-16 index: first and last candidate that ends there
-    private endHead = new Int32Array(1024);
-    private endTail = new Int32Array(1024);
+    private endHead = new Int32Array(FIRST_POSITIONS);
+    private endTail = new Int32Array(FIRST_POSITIONS);
 
     constructor(dictionary: Dictionary) {
         this.trie = dictionary.trie;
@@ -109,13 +117,39 @@ export class Analyzer {
     }
 
     /**
+     * Go back to tables of the first size after the analysis of a long text.
+     */
+    private release(): void {
+        if (this.capacity > KEPT_ROWS) {
+            this.capacity = FIRST_ROWS;
+            this.nodeEntry = new Int32Array(FIRST_ROWS);
+            this.nodeStart = new Int32Array(FIRST_ROWS);
+            this.nodeEnd = new Int32Array(FIRST_ROWS);
+            this.nodeRight = new Int16Array(FIRST_ROWS);
+            this.nodePrev = new Int32Array(FIRST_ROWS);
+            this.nodeNext = new Int32Array(FIRST_ROWS);
+            this.nodeTotal = new Float64Array(FIRST_ROWS);
+        }
+        if (this.endHead.length > KEPT_ROWS) {
+            this.endHead = new Int32Array(FIRST_POSITIONS);
+            this.endTail = new Int32Array(FIRST_POSITIONS);
+        }
+    }
+
+    /**
      * Analyze `text` as one piece and append its tokens to `tokens`.
      * `word_position` continues from the last token of `tokens`.
      * @param view the entries of the dictionary that the analysis sees: the ones of a dictionary version
      */
     analyze(text: string, tokens: Token[], view: DictionaryView): Token[] {
+        this.addTokens(text, tokens, view);
+        this.release();
+        return tokens;
+    }
+
+    private addTokens(text: string, tokens: Token[], view: DictionaryView): void {
         const length = text.length;
-        if (length === 0) return tokens;
+        if (length === 0) return;
         if (this.endHead.length < length + 1) {
             this.endHead = new Int32Array(length * 2 + 1);
             this.endTail = new Int32Array(length * 2 + 1);
@@ -270,7 +304,7 @@ export class Analyzer {
             path = node;
             node = prev;
         }
-        if (path === NONE) return tokens;
+        if (path === NONE) return;
 
         const lastPosition = tokens.length > 0 ? tokens[tokens.length - 1].word_position : 0;
         const knownFeatures = this.knownFeatures;
@@ -315,6 +349,5 @@ export class Analyzer {
                 tokens.push(knownFeatures.token(entry, position, text.slice(start, end)));
             }
         }
-        return tokens;
     }
 }

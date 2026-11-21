@@ -70,6 +70,7 @@ U+0000 は、辞書がそれに与える種類を持つ文字で、単語の問�
 候補はオブジェクトではなく、表の行です。
 表の各列は数値の配列です。エントリー、始まり、終わり、右 ID、1 つ前の候補、もっとも低いコスト、同じ位置で終わる次の候補の列があります。
 トークナイザーは呼び出しの間も配列を保持し、テキストがより多くの行を必要とするときに配列を大きくします。
+決まった数より多くの行を必要としたテキストの後は、最初の大きさの配列に戻します。長い 1 つのテキストのメモリを、プロセスが終わるまで保持しないためです。
 そのため、解析がオブジェクトを作るのは、返すトークンの分だけです。
 
 トークナイザーは同期で動き、JavaScript は一度に 1 つの呼び出ししか実行しないので、呼び出しの間で配列を共有しても安全です。
@@ -108,13 +109,14 @@ U+0000 は、辞書がそれに与える種類を持つ文字で、単語の問�
 
 ## API とインターフェース
 
-kuromojin は 2 つの関数と 3 つの型を公開します。
+kuromojin は 2 つの関数と 4 つの型を公開します。
 
 - `tokenize(text: string, options?: getTokenizerOption): Promise<Readonly<Readonly<KuromojiToken>[]>>`
 - `getTokenizer(options?: getTokenizerOption): Promise<Tokenizer>`
 - `KuromojiToken` はトークンの型である。未知語のトークンは `reading` と `pronunciation` を持たないが、型はこの 2 つを `string` と宣言する。
 - `Tokenizer` は `tokenize(text: string): KuromojiToken[]` と `tokenizeForSentence(text: string): KuromojiToken[]` を持つ。
-- `getTokenizerOption` は、どれも省略できる `dicPath?: string`、`dictionaryVersion?: string`、`noCacheTokenize?: boolean` を持つ。
+- `getTokenizerOption` は、どれも省略できる `dicPath?: string`、`dictionaryVersion?: DictionaryVersion`、`noCacheTokenize?: boolean` を持つ。
+- `DictionaryVersion` は `dictionaryVersion` の値の型である。パッケージの辞書が持つバージョンの日付のユニオン型である。
 
 ## 外部サービスとの連携
 

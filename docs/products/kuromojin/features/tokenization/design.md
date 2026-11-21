@@ -70,6 +70,7 @@ This order is part of the result, because it decides the tokens of texts with eq
 The candidates are rows of a table, not objects.
 Each column of the table is an array of numbers: the entry, the start, the end, the right id, the previous candidate, the lowest cost, and the next candidate that ends at the same position.
 The tokenizer keeps the arrays between calls and makes them larger when a text needs more rows.
+After a text that needed more rows than a fixed number, it goes back to arrays of the first size, so one long text does not keep its memory until the process ends.
 So an analysis creates objects only for the tokens that it returns.
 
 The tokenizer is synchronous, and JavaScript runs one call at a time, so sharing the arrays between calls is safe.
@@ -108,13 +109,14 @@ The table of candidates lives only during one analysis and is described under [M
 
 ## APIs and interfaces
 
-kuromojin exports two functions and three types.
+kuromojin exports two functions and four types.
 
 - `tokenize(text: string, options?: getTokenizerOption): Promise<Readonly<Readonly<KuromojiToken>[]>>`
 - `getTokenizer(options?: getTokenizerOption): Promise<Tokenizer>`
 - `KuromojiToken` is the type of a token. It declares `reading` and `pronunciation` as `string`, although a token of an unknown word does not have them.
 - `Tokenizer` has `tokenize(text: string): KuromojiToken[]` and `tokenizeForSentence(text: string): KuromojiToken[]`.
-- `getTokenizerOption` has the optional `dicPath?: string`, `dictionaryVersion?: string`, and `noCacheTokenize?: boolean`.
+- `getTokenizerOption` has the optional `dicPath?: string`, `dictionaryVersion?: DictionaryVersion`, and `noCacheTokenize?: boolean`.
+- `DictionaryVersion` is the type of the value of `dictionaryVersion`. It is the union of the dates of the versions of the dictionary of the package.
 
 ## External service integration
 

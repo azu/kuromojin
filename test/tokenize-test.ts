@@ -113,6 +113,17 @@ describe("getTokenizer", function () {
         assert.notStrictEqual(first, second);
         assert.deepStrictEqual(first, second);
     });
+    it("returns the same tokens before and after a text that is too long to keep its table of candidates", async function () {
+        const tokenizer = await getTokenizer();
+        const sentence = "吾輩は猫である。名前はまだ無い。";
+        const before = tokenizer.tokenizeForSentence(sentence);
+        const long = sentence.repeat(20000);
+        const tokens = tokenizer.tokenizeForSentence(long);
+        assert.strictEqual(tokens.length, before.length * 20000);
+        assert.strictEqual(tokens.map((token) => token.surface_form).join(""), long);
+        assert.deepStrictEqual(tokens.slice(-before.length), tokenizer.tokenizeForSentence(long).slice(-before.length));
+        assert.deepStrictEqual(tokenizer.tokenizeForSentence(sentence), before);
+    });
     it("tokenize of the tokenizer splits the text after 、 and 。 and continues the positions", async function () {
         const tokenizer = await getTokenizer();
         const tokens = tokenizer.tokenize("これは1文。これは2文。");
