@@ -52,23 +52,6 @@ console.log(tokens);
 */
 ```
 
-### Which function to use
-
-kuromojin exports two functions, `tokenize` and `getTokenizer`.
-`tokenize` is the one to use in most code, including textlint rules.
-
-| You want | Use |
-| --- | --- |
-| The tokens of a text | `await tokenize(text)` |
-| The tokens without a `Promise` for each text, for example in a loop over many texts or in a synchronous function | `const tokenizer = await getTokenizer()` once, then `tokenizer.tokenizeForSentence(text)` |
-| The tokens that `tokenize` of kuromoji.js returns | `tokenizer.tokenize(text)` |
-
-- `tokenize(text)` and `tokenizer.tokenizeForSentence(text)` return the same tokens. They even return the same array, because they share the remembered tokens. The only difference is that `tokenize(text)` returns a `Promise` and waits for the dictionary by itself.
-- `getTokenizer()` is not faster for one text. Once the dictionary is loaded, `tokenize(text)` does not load anything again. `getTokenizer()` is for code that can not wait for a `Promise` at each text.
-- `tokenizer.tokenize(text)` is a different analysis: it splits the text after each `、` and `。` before the analysis. Its tokens differ from the ones of `tokenize(text)` for some texts. It exists for code that was written for `tokenize` of kuromoji.js. Do not use it in new code.
-
-:warning: The names are confusing: `tokenize` of kuromojin is the same as `tokenizeForSentence` of the tokenizer, not as `tokenize` of the tokenizer.
-
 ## API
 
 ### `tokenize(text, options?): Promise<Readonly<Readonly<KuromojiToken>[]>>`
@@ -83,25 +66,49 @@ const tokens = await tokenize("すもももももももものうち");
 const nouns = tokens.filter((token) => token.pos === "名詞");
 ```
 
-### `getTokenizer(options?): Promise<Tokenizer>`
+This is the function to use, also in textlint rules. kuromojin has one more function, `getTokenizer`, for the rare code that can not use a `Promise` at each text.
 
-Returns a `Promise` that is resolved with a tokenizer after the dictionary is loaded.
-The tokenizer has two synchronous functions and nothing else.
+<details>
+<summary><code>getTokenizer(options?)</code>: analyze without a <code>Promise</code> for each text</summary>
 
-- `tokenizer.tokenizeForSentence(text)` analyzes the whole text as one piece, as `tokenize(text)` of kuromojin does.
-- `tokenizer.tokenize(text)` splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces. `word_position` still counts from the start of the text.
+`getTokenizer(options?): Promise<Tokenizer>` returns a `Promise` that is resolved with a tokenizer after the dictionary is loaded.
+The functions of the tokenizer are synchronous.
+
+Use it only when the code that needs the tokens can not `await`, for example a synchronous callback. Wait for the tokenizer once before it, and call the tokenizer in it.
+It gives the same tokens as `tokenize(text)`, and it is not faster: once the dictionary is loaded, `tokenize(text)` does not load anything again.
 
 ```js
 import { getTokenizer } from "kuromojin";
 
 const tokenizer = await getTokenizer();
-for (const sentence of sentences) {
-    // no Promise here
+const nounCounts = sentences.map((sentence) => {
+    // a synchronous callback: no `await` here
     const tokens = tokenizer.tokenizeForSentence(sentence);
-}
+    return tokens.filter((token) => token.pos === "名詞").length;
+});
 ```
 
-For example, the two functions of the tokenizer give different tokens for `なぜなら` in this text.
+The tokenizer has two functions and nothing else.
+
+| Function | Status | What it does |
+| --- | --- | --- |
+| `tokenizer.tokenizeForSentence(text)` | Use this | Analyzes the whole text as one piece. It returns the same array as `tokenize(text)` of kuromojin, because the two share the remembered tokens. |
+| `tokenizer.tokenize(text)` | **Deprecated** | Splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces. `word_position` still counts from the start of the text. |
+
+#### Deprecated: `tokenizer.tokenize(text)`
+
+`tokenizer.tokenize(text)` exists only for compatibility with `tokenize` of the tokenizer of kuromoji.js. Do not use it in new code.
+
+- **Why:** Its tokens differ from the tokens of `tokenize(text)` of kuromojin for some texts, because of the split. Rules are written against the tokens of the whole text.
+- **The name is a trap:** `tokenize` of kuromojin is the same as `tokenizeForSentence` of the tokenizer, not as `tokenize` of the tokenizer.
+- **What to use:** `tokenizer.tokenizeForSentence(text)`, or `await tokenize(text)`.
+
+```diff
+- const tokens = tokenizer.tokenize(text);
++ const tokens = tokenizer.tokenizeForSentence(text);
+```
+
+For example, the two functions give different tokens for `なぜなら` in this text.
 
 ```js
 const text = "あります。なぜならJavaScriptは";
@@ -109,13 +116,16 @@ tokenizer.tokenizeForSentence(text); // あり, ます, 。, なぜ, なら, Jav
 tokenizer.tokenize(text); // あり, ます, 。, なぜなら, JavaScript, は
 ```
 
-### Options
+`getTokenizer` takes the same options as `tokenize`. With `noCacheTokenize: true`, it resolves with a tokenizer that analyzes every text again.
+`tokenizer.tokenize(text)` remembers its tokens apart from the ones of `tokenize(text)`, because its tokens differ.
 
-`tokenize` and `getTokenizer` take the same options.
+</details>
+
+### Options
 
 - `dicPath?: string`: the [dictionary path](#dictionary). It is used only by the call that starts loading the dictionary.
 - `dictionaryVersion?: DictionaryVersion`: the [dictionary version](#dictionary-versions) of the call, as a date written as `YYYY-MM-DD`. The type `DictionaryVersion` is the union of the dates of the versions.
-- `noCacheTokenize?: boolean`: turns off the [reuse of tokens](#returned-tokens-are-shared-and-read-only). `tokenize()` analyzes the text again and does not remember the tokens, and `getTokenizer()` resolves with a tokenizer that analyzes every text again. Default: `false`
+- `noCacheTokenize?: boolean`: turns off the [reuse of tokens](#returned-tokens-are-shared-and-read-only). `tokenize()` analyzes the text again and does not remember the tokens. Default: `false`
 
 ### Token
 
@@ -143,9 +153,6 @@ The TypeScript type of a token is `KuromojiToken`.
 kuromojin remembers the tokens of the 1,000 most recently used texts, and returns the same array for the same text and the same dictionary version.
 When many textlint rules ask for the tokens of the same sentence, the sentence is analyzed once.
 
-- `tokenize(text)` and `tokenizer.tokenizeForSentence(text)` share the remembered tokens.
-- `tokenizer.tokenize(text)` remembers its tokens apart from them, because its tokens differ.
-
 All callers get the same array and the same objects, so do not change them. Their types are read-only for this reason.
 Copy the array when you need to change it, for example `tokens.slice()` or `tokens.map((token) => ({ ...token }))`.
 
@@ -153,7 +160,6 @@ Copy the array when you need to change it, for example `tokens.slice()` or `toke
 
 ```js
 const tokens = await tokenize(text, { noCacheTokenize: true });
-const tokenizer = await getTokenizer({ noCacheTokenize: true });
 ```
 
 ## Dictionary
@@ -183,10 +189,10 @@ With a bundler, let the bundler copy the dictionary of the package and give its 
 [Vite](https://vite.dev/): import the file with `?url`. The [online playground](web/index.ts) is built in this way.
 
 ```js
-import { getTokenizer } from "kuromojin";
+import { tokenize } from "kuromojin";
 import dictionaryUrl from "kuromojin/dict/kuromojin.dict?url";
 
-const tokenizer = await getTokenizer({ dicPath: dictionaryUrl });
+const tokens = await tokenize(text, { dicPath: dictionaryUrl });
 ```
 
 [webpack](https://webpack.js.org/): handle `.dict` files as [asset modules](https://webpack.js.org/guides/asset-modules/).
@@ -201,19 +207,19 @@ module.exports = {
 ```
 
 ```js
-import { getTokenizer } from "kuromojin";
+import { tokenize } from "kuromojin";
 import dictionaryUrl from "kuromojin/dict/kuromojin.dict";
 
-const tokenizer = await getTokenizer({ dicPath: dictionaryUrl });
+const tokens = await tokenize(text, { dicPath: dictionaryUrl });
 ```
 
 Without a bundler, give the URL of the file on a CDN that serves the files of npm packages, such as [jsDelivr](https://www.jsdelivr.com/).
 Replace `<version>` with the exact version of kuromojin that your page uses, 3.1.0 or later: the dictionary is in the package since 3.1.0. The file of a version never changes, so the tokens do not change until you change the URL.
 
 ```js
-import { getTokenizer } from "kuromojin";
+import { tokenize } from "kuromojin";
 
-const tokenizer = await getTokenizer({
+const tokens = await tokenize(text, {
     dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict"
 });
 ```
@@ -226,8 +232,8 @@ import { getTokenizer } from "kuromojin";
 globalThis.kuromojin = {
     dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict"
 };
-// this `getTokenizer` loads the dictionary of `globalThis.kuromojin.dicPath`
-getTokenizer();
+// this `tokenize` loads the dictionary of `globalThis.kuromojin.dicPath`
+const tokens = await tokenize(text);
 ```
 
 For compatibility, a URL of the `dict` directory of kuromoji.js also works as the dictionary path, as described under [Dictionary](#dictionary). The dictionary of kuromojin gives the same tokens with a smaller download.
@@ -263,7 +269,7 @@ const tokens = await tokenize(text, { dictionaryVersion: "2007-08-01" });
 kuromojin returns the tokens of kuromoji.js 0.1.2 for the same text and the same dictionary, with these differences.
 
 - A text with a character outside the Basic Multilingual Plane, such as `𩸽` or an emoji: kuromoji.js loses characters after such a character. kuromojin keeps every character of the text in a token.
-- The tokenizer of `getTokenizer()` has only `tokenize` and `tokenizeForSentence`.
+- The tokenizer of `getTokenizer()` has only `tokenize` and `tokenizeForSentence`, not the other members of the tokenizer of kuromoji.js.
 
 ### Why kuromojin has its own analyzer
 
@@ -286,9 +292,9 @@ Code that moves from kuromoji.js to kuromojin replaces the functions in this way
 
 | kuromoji.js | kuromojin |
 | --- | --- |
-| `kuromoji.builder({ dicPath }).build(callback)` | `await getTokenizer({ dicPath })`, or nothing when the code uses `tokenize` of kuromojin |
+| `kuromoji.builder({ dicPath }).build(callback)` | Nothing: `tokenize` of kuromojin loads the dictionary. `await getTokenizer({ dicPath })` when the code needs the tokenizer |
 | `tokenizer.tokenizeForSentence(text)` | `await tokenize(text)` or `tokenizer.tokenizeForSentence(text)` |
-| `tokenizer.tokenize(text)` | `tokenizer.tokenize(text)` |
+| `tokenizer.tokenize(text)` | `tokenizer.tokenize(text)` (deprecated) |
 
 kuromojin has no default export. Import the functions by name: `import { tokenize } from "kuromojin"`.
 
