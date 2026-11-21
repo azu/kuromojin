@@ -80,8 +80,13 @@ block-beta
     columns 4
     a["先頭"] s["シグネチャ KMJD（4 バイト）"] v["形式のバージョン（4 バイト）"] l["表の長さ（4 バイト）"]
     b["表"] t["JSON：辞書のバージョンと、各部分の名前、位置、長さ"]:3
-    c["各部分"] p1["連接コスト"] p2["未知語"] p3["単語"]
-    space p4["単語のエントリー"] p5["コストと ID"] p6["素性とその文字列"]
+    c["各部分"] p1["connection_costs"] p2["unknown_entries"] p3["unknown_features"]
+    space p4["unknown_map"] p5["unknown_chars"] p6["unknown_classes"]
+    space p7["trie_chars"] p8["trie_children"] p9["trie_ends"]
+    space p10["word_offsets"] p11["word_entries"] p12["left_ids"]
+    space p13["word_costs"] p14["combinations"] p15["readings"]
+    space p16["with_base_form"] p17["base_forms"] p18["with_pronunciation"]
+    space p19["pronunciations"] p20["combination_strings"] p21["strings"]
     style a fill:none,stroke:none
     style b fill:none,stroke:none
     style c fill:none,stroke:none
@@ -89,6 +94,8 @@ block-beta
 
 図の左の列は 3 つの領域の名前で、ファイルの中にはありません。
 先頭と表は圧縮せず、各部分はそれぞれが独立した gzip ストリームです。
+図は、パッケージの辞書の各部分を、ファイルの中の順に、左から右、上から下へ並べています。
+読み込む側は表の中の名前で部分を見つけるので、形式は各部分の順を決めません。
 
 形式のバージョンと表の長さは、最下位のバイトが先頭にある符号なしの数値です。
 表の中の各部分の位置は、表の終わりから数えます。

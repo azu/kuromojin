@@ -80,8 +80,13 @@ block-beta
     columns 4
     a["Start"] s["Signature KMJD (4 bytes)"] v["Version of the format (4 bytes)"] l["Length of the table (4 bytes)"]
     b["Table"] t["JSON: the dictionary versions, and the name, position, and lengths of each part"]:3
-    c["Parts"] p1["Connection costs"] p2["Unknown words"] p3["Words"]
-    space p4["Entries of a word"] p5["Costs and ids"] p6["Features and their strings"]
+    c["Parts"] p1["connection_costs"] p2["unknown_entries"] p3["unknown_features"]
+    space p4["unknown_map"] p5["unknown_chars"] p6["unknown_classes"]
+    space p7["trie_chars"] p8["trie_children"] p9["trie_ends"]
+    space p10["word_offsets"] p11["word_entries"] p12["left_ids"]
+    space p13["word_costs"] p14["combinations"] p15["readings"]
+    space p16["with_base_form"] p17["base_forms"] p18["with_pronunciation"]
+    space p19["pronunciations"] p20["combination_strings"] p21["strings"]
     style a fill:none,stroke:none
     style b fill:none,stroke:none
     style c fill:none,stroke:none
@@ -89,6 +94,8 @@ block-beta
 
 The left column of the diagram names the three regions and is not in the file.
 The start and the table are not compressed, and each part is its own gzip stream.
+The diagram has the parts of the dictionary of the package in the order of the file, from left to right and from top to bottom.
+A reader finds a part by its name in the table, so the format does not fix the order of the parts.
 
 The version of the format and the length of the table are unsigned numbers with the lowest byte first.
 The position of a part in the table counts from the end of the table.
