@@ -1,6 +1,5 @@
 // LICENSE : MIT
 "use strict";
-import { LRUMap } from "lru_map";
 import { Analyzer, splitByPunctuation } from "./analyzer/Analyzer";
 import type { Dictionary } from "./analyzer/Dictionary";
 import type { DictionaryVersion } from "./analyzer/DictionaryVersion";
@@ -14,6 +13,7 @@ import {
 import { loadDictionary } from "./analyzer/loader/loadDictionary";
 import { isNode } from "./analyzer/loader/platform";
 import type { Token } from "./analyzer/Token";
+import { LeastRecentlyUsedMap } from "./LeastRecentlyUsedMap";
 
 export type KuromojiToken = Token;
 export type { DictionaryVersion };
@@ -186,16 +186,16 @@ type RememberedTokens = {
 };
 // cache for tokenize and tokenizeForSentence of the tokenizer: text -> tokens of each version.
 // The key is the text as the caller passes it, so a lookup creates no string.
-const tokenizeCacheMap = new LRUMap<string, RememberedTokens>(1000);
+const tokenizeCacheMap = new LeastRecentlyUsedMap<string, RememberedTokens>(1000);
 // cache for tokenize of the tokenizer, which splits the text at punctuation: text -> tokens of each version.
-const splitTokenizeCacheMap = new LRUMap<string, RememberedTokens>(1000);
+const splitTokenizeCacheMap = new LeastRecentlyUsedMap<string, RememberedTokens>(1000);
 
 /**
  * The remembered tokens of the text and the version, or the tokens of `analyze`, which are remembered.
  * The tokens of one version are never returned for another one.
  */
 const remember = (
-    cacheMap: LRUMap<string, RememberedTokens>,
+    cacheMap: LeastRecentlyUsedMap<string, RememberedTokens>,
     text: string,
     version: string,
     analyze: (text: string) => Readonly<Readonly<KuromojiToken>[]>
