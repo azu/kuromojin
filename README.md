@@ -240,6 +240,7 @@ The dictionary is the same.
     yarn test
 
 - `yarn run build:dict` converts the dictionary of kuromoji.js 0.1.2 and the changes of `dict-source/versions.csv` into `dict/kuromojin.dict`.
+- `yarn run profile` measures the working tree on fixed sets of texts: the load of the dictionary, the analysis, the memory, the allocation, the installed size, and the functions with the most CPU time. `yarn run compare` measures `master` too and prints each number with its ratio and the texts whose tokens differ. CI runs the comparison for each pull request and puts it in the job summary.
 - The specifications are in [docs/products/kuromojin](docs/products/kuromojin/product.md).
 
 ## Contributing

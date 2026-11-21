@@ -38,6 +38,7 @@
   "scripts": {
     "build": "cross-env NODE_ENV=production tsc -p .",
     "build:dict": "ts-node scripts/build-dict.ts",
+    "compare": "node benchmark/compare.js",
     "cp-public": "mkdir -p public/dict && cp node_modules/kuromoji/dict/*.dat.gz dict/kuromojin.dict public/dict/",
     "dev": "npm run cp-public && vite",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,css}\"",
@@ -45,6 +46,7 @@
     "prepare": "git config --local core.hooksPath .githooks",
     "prepublish": "npm run --if-present build",
     "preview": "npm run cp-public && vite preview",
+    "profile": "node benchmark/profile.js",
     "test": "mocha \"test/**/*.{js,ts}\"",
     "watch": "tsc -p . --watch",
     "web:build": "npm run cp-public && vite build"

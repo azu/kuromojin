@@ -1,0 +1,14 @@
+{
+    "small": {
+        "label": "the Japanese documents of this repository",
+        "path": "docs",
+        "ending": ".ja.md"
+    },
+    "medium": {
+        "label": "js-primer v7.0.0",
+        "repository": "https://github.com/asciidwango/js-primer",
+        "commit": "6c1a17c246baaf0f6ae573a6947acddef6f6b5f9",
+        "path": "source",
+        "ending": ".md"
+    }
+}
