@@ -188,7 +188,8 @@ The website serves these files.
 - **Dictionary of kuromoji.js:** The twelve files of the dictionary of kuromoji.js 0.1.2 under `https://kuromojin.netlify.app/dict/`, for example `https://kuromojin.netlify.app/dict/base.dat.gz`.
 
 The file of the dictionary of the package changes when the website is built from a newer kuromojin.
-So these URLs are for trials. A page that needs the dictionary of one release serves the file of that release itself.
+So these URLs are for trials, and for the pages that already load them. The documentation of kuromojin does not name them for a new page.
+A page that needs the dictionary of one release names the file of that release: it serves the file itself, or it names the URL of the file on a server that serves the files of the npm package, as described in [Dictionary](../dictionary/requirements.md).
 
 #### Exceptional behavior
 

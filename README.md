@@ -207,28 +207,37 @@ import dictionaryUrl from "kuromojin/dict/kuromojin.dict";
 const tokenizer = await getTokenizer({ dicPath: dictionaryUrl });
 ```
 
+Without a bundler, give the URL of the file on a CDN that serves the files of npm packages, such as [jsDelivr](https://www.jsdelivr.com/).
+Write the exact version of kuromojin in the URL. The file of a version never changes, so the tokens do not change until you change the URL.
+
+```js
+import { getTokenizer } from "kuromojin";
+
+const tokenizer = await getTokenizer({
+    dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@3.1.0/dict/kuromojin.dict"
+});
+```
+
+- `https://cdn.jsdelivr.net/npm/kuromojin@3.1.0/dict/kuromojin.dict`
+    - the dictionary of kuromojin 3.1.0. The dictionary is in the package since 3.1.0
+- `https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict`
+    - the dictionary of kuromoji.js 0.1.2
+    - example: https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/base.dat.gz
+
 `globalThis.kuromojin.dicPath` sets the dictionary path for every module that uses kuromojin in the page, such as textlint rules.
 
 ```js
 import { getTokenizer } from "kuromojin";
 // Affects all modules that use kuromojin.
 globalThis.kuromojin = {
-    dicPath: "https://kuromojin.netlify.app/dict/kuromojin.dict"
+    dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@3.1.0/dict/kuromojin.dict"
 };
-// this `getTokenizer` loads "https://kuromojin.netlify.app/dict/kuromojin.dict"
+// this `getTokenizer` loads the dictionary of `globalThis.kuromojin.dicPath`
 getTokenizer();
 ```
 
-:memo: Dictionary URLs for trials
-
-The website of kuromojin serves these files to pages of any origin.
-They are for trials: they change when the website is built from a newer kuromojin, so serve the dictionary from your own site in production.
-
-- `https://kuromojin.netlify.app/dict/kuromojin.dict`
-    - the dictionary of kuromojin
-- `https://kuromojin.netlify.app/dict`
-    - the dictionary of kuromoji.js 0.1.2
-    - example: https://kuromojin.netlify.app/dict/base.dat.gz
+:memo: `https://kuromojin.netlify.app/dict/kuromojin.dict` and `https://kuromojin.netlify.app/dict` still work for the pages that already load them.
+Do not use them in a new page: the website of kuromojin is not a CDN, and its dictionary changes when the website is built from a newer kuromojin.
 
 ## Dictionary versions
 
