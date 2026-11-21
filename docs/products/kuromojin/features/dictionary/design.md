@@ -77,14 +77,18 @@ The file has three regions in this order.
 
 ```mermaid
 block-beta
-    columns 3
-    h["Start (not compressed)"]:3
-    s["Signature KMJD (4 bytes)"] v["Version of the format (4 bytes)"] l["Length of the table (4 bytes)"]
-    t["Table (JSON, not compressed): the dictionary versions, and the name, position, and lengths of each part"]:3
-    ph["Parts, each as its own gzip stream"]:3
-    p1["Connection costs"] p2["Unknown words"] p3["Words"]
-    p4["Entries of a word"] p5["Costs and ids"] p6["Features and their strings"]
+    columns 4
+    a["Start"] s["Signature KMJD (4 bytes)"] v["Version of the format (4 bytes)"] l["Length of the table (4 bytes)"]
+    b["Table"] t["JSON: the dictionary versions, and the name, position, and lengths of each part"]:3
+    c["Parts"] p1["Connection costs"] p2["Unknown words"] p3["Words"]
+    space p4["Entries of a word"] p5["Costs and ids"] p6["Features and their strings"]
+    style a fill:none,stroke:none
+    style b fill:none,stroke:none
+    style c fill:none,stroke:none
 ```
+
+The left column of the diagram names the three regions and is not in the file.
+The start and the table are not compressed, and each part is its own gzip stream.
 
 The version of the format and the length of the table are unsigned numbers with the lowest byte first.
 The position of a part in the table counts from the end of the table.
