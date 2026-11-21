@@ -14,7 +14,7 @@ export function readTargetMap(bytes: Uint8Array): { offsets: Int32Array; entries
     let maxKey = -1;
     let total = 0;
     // kuromoji.js reads until the end of the file and does not use the number of keys
-    for (let position = 4; position + 1 <= bytes.length; ) {
+    for (let position = 4; position + 1 <= bytes.length;) {
         const key = readInt32(bytes, position);
         const size = readInt32(bytes, position + 4);
         position += 8 + size * 4;
@@ -22,7 +22,7 @@ export function readTargetMap(bytes: Uint8Array): { offsets: Int32Array; entries
         total += size;
     }
     const offsets = new Int32Array(maxKey + 2);
-    for (let position = 4; position + 1 <= bytes.length; ) {
+    for (let position = 4; position + 1 <= bytes.length;) {
         const key = readInt32(bytes, position);
         const size = readInt32(bytes, position + 4);
         offsets[key + 1] += size;
@@ -31,7 +31,7 @@ export function readTargetMap(bytes: Uint8Array): { offsets: Int32Array; entries
     for (let i = 1; i < offsets.length; i++) offsets[i] += offsets[i - 1];
     const entries = new Int32Array(total);
     const filled = new Int32Array(maxKey + 1);
-    for (let position = 4; position + 1 <= bytes.length; ) {
+    for (let position = 4; position + 1 <= bytes.length;) {
         const key = readInt32(bytes, position);
         const size = readInt32(bytes, position + 4);
         position += 8;
@@ -97,7 +97,7 @@ export function readUnknownWords(
     let defaultClass = 0;
     let foundDefault = false;
     const names = new Utf8Reader(unkInvoke);
-    for (let position = 0; position + 1 < unkInvoke.length; ) {
+    for (let position = 0; position + 1 < unkInvoke.length;) {
         const classId = invoke.length;
         invoke.push(unkInvoke[position]);
         grouping.push(unkInvoke[position + 1]);

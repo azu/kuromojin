@@ -142,7 +142,7 @@ type Word = { word: string; entries: number[] };
 function readBaseWords(files: KuromojiFiles): Word[] {
     const tidMap = trim(files["tid_map.dat.gz"], 4);
     const entriesOfValue = new Map<number, number[]>();
-    for (let position = 4; position + 8 <= tidMap.length; ) {
+    for (let position = 4; position + 8 <= tidMap.length;) {
         const key = tidMap.readInt32LE(position);
         const size = tidMap.readInt32LE(position + 4);
         const values: number[] = [];

@@ -321,7 +321,7 @@ export class Analyzer {
         }
         // the split from the end to the start, reversed in place through nodeNext
         let path = NONE;
-        for (let node = best; node > 0; ) {
+        for (let node = best; node > 0;) {
             const prev = nodePrev[node];
             nodeNext[node] = path;
             path = node;
