@@ -96,6 +96,7 @@ With `noCacheTokenize: true`, it calls `tokenizeForSentence(text)` and returns t
 
 The key of the map is the text as the caller passes it, so a lookup creates no string.
 The map keeps the 1,000 most recently used texts and removes the least recently used one, with its tokens of all versions, when it is full.
+It is a `Map` of JavaScript whose entries are also linked in the order of their last use. A lookup that finds a text moves its entry to the newest end of the links, and a store that makes the map hold more than 1,000 texts deletes the entry at the oldest end. Moving an entry changes a few references and does not delete and add the text in the `Map` again, because that is slower.
 It is a variable of the module, so each installed copy of kuromojin has its own map, and all callers of one copy share it.
 The stored arrays are not copied or frozen. The read-only type of the result is what keeps callers from changing them.
 
@@ -129,7 +130,7 @@ kuromojin exports two functions and four types.
 
 ## External service integration
 
-None. The analysis is part of kuromojin and uses no network service. The cache depends on the npm package `lru_map`.
+None. The analysis is part of kuromojin and uses no network service.
 
 ## Data handling
 
@@ -188,9 +189,10 @@ It was not chosen, because the forced split at `。` gave wrong results.
 The map could keep ten times as many texts.
 It was not chosen, because most repeated calls for a text come right after each other, from the rules that look at the same sentence. More texts add few hits, and the map holds their tokens in memory until the process ends.
 
-### Other decisions
+### Use a package for the map
 
-There is no record of alternatives for the choice of `lru_map`, and the reason for it is unknown.
+The map could come from a package that implements a least recently used map, such as `lru_map`.
+It was not chosen, because the map needs only a lookup and a store, which take a few dozen lines on top of a `Map` of JavaScript. A package adds a dependency to every installation for no gain.
 
 ## Open questions
 

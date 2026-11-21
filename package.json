@@ -51,9 +51,6 @@
     "watch": "tsc -p . --watch",
     "web:build": "npm run cp-public && vite build"
   },
-  "dependencies": {
-    "lru_map": "^0.4.1"
-  },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.10.6",
