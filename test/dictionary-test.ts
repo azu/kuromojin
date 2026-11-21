@@ -1,5 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
+import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 import fs from "node:fs";
 import http from "http";
 import path from "node:path";
@@ -19,19 +20,17 @@ import {
 
 // The scenarios of docs/products/kuromojin/features/dictionary/requirements.md
 describe("dictionary", function () {
-    this.timeout(60000);
-
-    context("dictionary path", function () {
+    describe("dictionary path", function () {
         it("uses the dictionary of the package when no dictionary path is given", async function () {
             await withSettings({}, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 const reads = await recordReads(() => kuromojin.getTokenizer());
                 assert.deepStrictEqual(reads, [packageDictionaryFile]);
             });
         });
         it("uses the dictionary of the package when the first call has options without a dictionary path", async function () {
             await withSettings({}, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 let tokens: readonly { surface_form: string }[] = [];
                 const reads = await recordReads(async () => {
                     tokens = await kuromojin.tokenize("黒文字", { noCacheTokenize: true });
@@ -45,7 +44,7 @@ describe("dictionary", function () {
         });
         it("loads the dictionary from dicPath of the first call, even when KUROMOJIN_DIC_PATH names another one", async function () {
             await withSettings({ env: "/not-found/kuromojin.dict" }, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 const reads = await recordReads(() => kuromojin.getTokenizer({ dicPath: packageDictionaryFile }));
                 assert.deepStrictEqual(reads, [packageDictionaryFile]);
             });
@@ -53,7 +52,7 @@ describe("dictionary", function () {
         it("loads the dictionary from KUROMOJIN_DIC_PATH", async function () {
             const copy = writeTemporaryFile("copy-for-env.dict", fs.readFileSync(packageDictionaryFile));
             await withSettings({ env: copy, global: { dicPath: "/not-found/kuromojin.dict" } }, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 const reads = await recordReads(() => kuromojin.getTokenizer());
                 assert.deepStrictEqual(reads, [copy]);
             });
@@ -61,17 +60,17 @@ describe("dictionary", function () {
         it("loads the dictionary from globalThis.kuromojin.dicPath", async function () {
             const copy = writeTemporaryFile("copy-for-global.dict", fs.readFileSync(packageDictionaryFile));
             await withSettings({ global: { dicPath: copy } }, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 const reads = await recordReads(() => kuromojin.tokenize("黒文字"));
                 assert.deepStrictEqual(reads, [copy]);
             });
         });
     });
 
-    context("loading once", function () {
+    describe("loading once", function () {
         it("reads the dictionary once when many callers ask for the tokenizer at the same time", async function () {
             await withSettings({}, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 let tokenizers: unknown[] = [];
                 const reads = await recordReads(async () => {
                     tokenizers = await Promise.all([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(() => kuromojin.getTokenizer()));
@@ -82,7 +81,7 @@ describe("dictionary", function () {
         });
         it("does not use a later dictionary path when the dictionary is already loaded", async function () {
             await withSettings({}, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 const first = await kuromojin.getTokenizer();
                 let second: unknown;
                 const reads = await recordReads(async () => {
@@ -94,17 +93,17 @@ describe("dictionary", function () {
         });
     });
 
-    context("dictionary of kuromoji.js", function () {
+    describe("dictionary of kuromoji.js", function () {
         it("loads a directory with the twelve files, and returns the same token as the dictionary of the package", async function () {
             await withSettings({}, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 let tokens: unknown;
                 const reads = await recordReads(async () => {
                     tokens = await kuromojin.tokenize("黒文字", { dicPath: kuromojiDictionaryDirectory });
                 });
                 assert.strictEqual(reads.length, 12);
                 assert.ok(reads.every((file) => file.endsWith(".dat.gz")));
-                assert.deepStrictEqual(tokens, await freshKuromojin().tokenize("黒文字"));
+                assert.deepStrictEqual(tokens, await (await freshKuromojin()).tokenize("黒文字"));
             });
         });
         it("loads a directory path that ends with a slash", async function () {
@@ -113,10 +112,10 @@ describe("dictionary", function () {
         });
     });
 
-    context("dictionary that cannot be loaded", function () {
+    describe("dictionary that cannot be loaded", function () {
         it("rejects with the error of the read, which names the file", async function () {
             await withSettings({ env: "/not-found-directory" }, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 await assert.rejects(kuromojin.getTokenizer(), /ENOENT.*not-found-directory/);
             });
         });
@@ -132,7 +131,7 @@ describe("dictionary", function () {
         });
         it("does not try again: every later call is rejected with the same error", async function () {
             await withSettings({}, async () => {
-                const kuromojin = freshKuromojin();
+                const kuromojin = await freshKuromojin();
                 const error = await kuromojin.getTokenizer({ dicPath: "/not-found/kuromojin.dict" }).catch((e) => e);
                 assert.ok(error instanceof Error);
                 const later = await kuromojin.tokenize("黒文字", { dicPath: packageDictionaryFile }).catch((e) => e);
@@ -142,12 +141,11 @@ describe("dictionary", function () {
     });
 
     // Node.js has fetch and DecompressionStream, so the functions for a browser are tested with a local server.
-    context("in a browser", function () {
+    describe("in a browser", function () {
         let server: http.Server;
         let origin: string;
         let requests: string[];
-        before(function (done) {
-            if (typeof fetch === "undefined" || typeof DecompressionStream === "undefined") return this.skip();
+        beforeAll(async function () {
             server = http.createServer((request, response) => {
                 const url = String(request.url);
                 requests.push(url);
@@ -164,17 +162,14 @@ describe("dictionary", function () {
                 response.writeHead(200, { "Content-Type": "application/octet-stream" });
                 response.end(fs.readFileSync(file));
             });
-            server.listen(0, "127.0.0.1", () => {
-                origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-                done();
-            });
+            await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+            origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
         });
         beforeEach(function () {
             requests = [];
         });
-        after(function (done) {
-            if (server) server.close(done);
-            else done();
+        afterAll(async function () {
+            await new Promise((resolve) => server.close(resolve));
         });
 
         it("downloads one file for the dictionary of the package", async function () {

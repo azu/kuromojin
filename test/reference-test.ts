@@ -1,5 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
+import { beforeAll, describe, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { Analyzer, splitByPunctuation } from "../src/analyzer/Analyzer";
@@ -62,10 +63,9 @@ const STEP = 20;
 
 // The reference result is what kuromoji.js 0.1.2 returns with the same dictionary.
 describe("reference result", function () {
-    this.timeout(60000);
     let reference: Reference;
     const lines = documentLines();
-    before(async function () {
+    beforeAll(async function () {
         reference = await new Promise<Reference>((resolve, reject) => {
             kuromoji
                 .builder({ dicPath: kuromojiDictionaryDirectory })
@@ -99,10 +99,10 @@ describe("reference result", function () {
         ["a dictionary of kuromojin with a later version", withLaterVersion]
     ];
     for (const [name, dictionaryPath] of formats) {
-        context(`with ${name}`, function () {
+        describe(`with ${name}`, function () {
             let analyzer: Analyzer;
             let view: DictionaryView;
-            before(async function () {
+            beforeAll(async function () {
                 const dictionary = await loadDictionary(dictionaryPath());
                 analyzer = new Analyzer(dictionary);
                 view = createDefaultView(dictionary);

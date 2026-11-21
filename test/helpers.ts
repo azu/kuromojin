@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { vi } from "vitest";
 import {
     BaseEntry,
     DictionaryBuilder,
@@ -16,16 +17,13 @@ export const kuromojiDictionaryDirectory = path.join(path.dirname(require.resolv
 export const packageDictionaryFile = path.join(__dirname, "..", "dict", "kuromojin.dict");
 export const BASE_VERSION = "2007-08-01";
 
-const sourceDirectory = path.join(__dirname, "..", "src") + path.sep;
 /**
  * Load kuromojin again as a new module, with no dictionary loaded.
  * kuromojin keeps the loaded dictionary in the module, so a test of loading needs its own copy.
  */
-export function freshKuromojin(): typeof import("../src") {
-    for (const file of Object.keys(require.cache)) {
-        if (file.startsWith(sourceDirectory)) delete require.cache[file];
-    }
-    return require("../src");
+export async function freshKuromojin(): Promise<typeof import("../src")> {
+    vi.resetModules();
+    return import("../src");
 }
 
 /**

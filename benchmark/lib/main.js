@@ -14,8 +14,8 @@ const { createResult, renderMarkdown } = require("./report");
 const usage = (compare) =>
     [
         compare
-            ? "Usage: yarn run compare [--base <ref>] [--set <names>] [--out-dir <dir>] [--cache-dir <dir>] [--no-build]"
-            : "Usage: yarn run profile [--set <names>] [--out-dir <dir>] [--cache-dir <dir>] [--no-build]",
+            ? "Usage: pnpm run compare [--base <ref>] [--set <names>] [--out-dir <dir>] [--cache-dir <dir>] [--no-build]"
+            : "Usage: pnpm run profile [--set <names>] [--out-dir <dir>] [--cache-dir <dir>] [--no-build]",
         "",
         ...(compare
             ? ["  --base <ref>       the commit to compare the working tree with. Default: origin/master, or master"]

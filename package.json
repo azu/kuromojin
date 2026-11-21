@@ -36,8 +36,8 @@
     "test": "test"
   },
   "scripts": {
-    "build": "cross-env NODE_ENV=production tsc -p .",
-    "build:dict": "ts-node scripts/build-dict.ts",
+    "build": "tsc -p .",
+    "build:dict": "tsc -p scripts && node scripts-build/scripts/build-dict.js",
     "compare": "node benchmark/compare.js",
     "cp-public": "mkdir -p public/dict && cp node_modules/kuromoji/dict/*.dat.gz dict/kuromojin.dict public/dict/",
     "dev": "npm run cp-public && vite",
@@ -47,23 +47,20 @@
     "prepublish": "npm run --if-present build",
     "preview": "npm run cp-public && vite preview",
     "profile": "node benchmark/profile.js",
-    "test": "mocha \"test/**/*.{js,ts}\"",
+    "test": "tsc -p test && pnpm run build && vitest run",
     "watch": "tsc -p . --watch",
     "web:build": "npm run cp-public && vite build"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^20.10.6",
-    "cross-env": "^7.0.3",
+    "@types/node": "^22.20.5",
     "kuromoji": "0.1.2",
-    "lint-staged": "^15.2.0",
-    "mocha": "^10.2.0",
-    "prettier": "^3.1.1",
-    "ts-node": "^10.9.2",
-    "ts-node-test-register": "^10.0.0",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.11"
+    "lint-staged": "^17.6.1",
+    "prettier": "^3.10.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
   },
+  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0",
   "email": "azuciao@gmail.com",
   "prettier": {
     "singleQuote": false,

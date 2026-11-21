@@ -334,7 +334,7 @@ The tokens stay the same, and these get smaller. The numbers are rough direction
 | Installed size with dependencies | 85%+ less (about 48 MB to about 5 MB) |
 | Time of a textlint run with [textlint-rule-preset-ja-technical-writing](https://github.com/textlint-ja/textlint-rule-preset-ja-technical-writing) | 60%+ less |
 
-`yarn run compare` measures these for a change, and CI runs it for each pull request, so that kuromojin does not get slower again.
+`pnpm run compare` measures these for a change, and CI runs it for each pull request, so that kuromojin does not get slower again.
 
 ### Moving from kuromoji.js
 
@@ -399,11 +399,11 @@ The words of the dictionary are the same.
 
 ## Development
 
-    yarn install
-    yarn test
+    pnpm install
+    pnpm test
 
-- `yarn run build:dict` converts the dictionary of kuromoji.js 0.1.2 and the changes of `dict-source/versions.csv` into `dict/kuromojin.dict`.
-- `yarn run profile` measures the working tree on fixed sets of texts: the load of the dictionary, the analysis, the memory, the allocation, the installed size, and the functions with the most CPU time. `yarn run compare` measures `master` too and prints each number with its ratio and the texts whose tokens differ. CI runs the comparison for each pull request and puts it in the job summary.
+- `pnpm run build:dict` converts the dictionary of kuromoji.js 0.1.2 and the changes of `dict-source/versions.csv` into `dict/kuromojin.dict`.
+- `pnpm run profile` measures the working tree on fixed sets of texts: the load of the dictionary, the analysis, the memory, the allocation, the installed size, and the functions with the most CPU time. `pnpm run compare` measures `master` too and prints each number with its ratio and the texts whose tokens differ. CI runs the comparison for each pull request and puts it in the job summary.
 - The specifications are in [docs/products/kuromojin](docs/products/kuromojin/product.md).
 
 ## Contributing

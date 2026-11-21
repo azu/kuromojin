@@ -1,11 +1,12 @@
 // LICENSE : MIT
 "use strict";
 import assert from "node:assert";
+import { describe, it } from "vitest";
 // it is compatible check for <= 1.1.0
 import { getTokenizer, tokenize } from "../src";
 
 describe("kuromojin", function () {
-    context("many access at a time", function () {
+    describe("many access at a time", function () {
         it("should return a.promise", function () {
             var promises = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((_num) => {
                 return getTokenizer();
@@ -18,7 +19,7 @@ describe("kuromojin", function () {
             });
         });
     });
-    context("tokenize", function () {
+    describe("tokenize", function () {
         it("is alias to default", function () {
             var data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
             var promises = data.map((num) => {

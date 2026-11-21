@@ -11,7 +11,7 @@ on:
       - "dict/**"
       - "benchmark/**"
       - "package.json"
-      - "yarn.lock"
+      - "pnpm-lock.yaml"
       - "tsconfig.json"
       - ".github/workflows/profile.yml"
 permissions:
@@ -32,12 +32,16 @@ jobs:
           # the base branch is needed for the worktree of the base
           fetch-depth: 0
           persist-credentials: false
+      - name: setup pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - name: setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: "lts/*"
+          cache: pnpm
       - name: Install
-        run: yarn install --frozen-lockfile --ignore-scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      # A base from before the move to pnpm has yarn.lock, and is installed with Yarn 1, which the runner has
       - name: Compare the base and the head
         env:
           # The tip of the base branch, which the checkout has merged the pull request into.

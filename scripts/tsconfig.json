@@ -1,0 +1,11 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        // `pnpm run build:dict` runs the compiled scripts from scripts-build/scripts/
+        "rootDir": "..",
+        "outDir": "../scripts-build",
+        "declaration": false,
+        "sourceMap": false
+    },
+    "include": ["./**/*.ts"]
+}

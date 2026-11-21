@@ -1,5 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
+import { describe, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -21,7 +22,6 @@ import {
 } from "./helpers";
 
 describe("build of the dictionary", function () {
-    this.timeout(120000);
     const files = readKuromojiFiles(kuromojiDictionaryDirectory);
     const baseEntries = readBaseEntries(files);
     const parse = (text: string) => parseVersions(text, BASE_VERSION, baseEntries, files["cc.dat.gz"]);
@@ -29,7 +29,7 @@ describe("build of the dictionary", function () {
     const heisei = baseEntries.find((entry) => entry.surface_form === "平成");
     if (!heisei) throw new Error("the base dictionary has 平成");
 
-    context("dictionary of the package", function () {
+    describe("dictionary of the package", function () {
         it("has the versions of dict-source/versions.csv", function () {
             const source = fs.readFileSync(path.join(__dirname, "..", "dict-source", "versions.csv"), "utf8");
             const versions = parse(source);
@@ -60,7 +60,7 @@ describe("build of the dictionary", function () {
         });
     });
 
-    context("changes of versions", function () {
+    describe("changes of versions", function () {
         it("reads added and removed entries with the date of their version", function () {
             const versions = parse(
                 [
