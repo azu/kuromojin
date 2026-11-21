@@ -82,6 +82,8 @@ export class Analyzer {
     private endTail = new Int32Array(FIRST_POSITIONS);
     /** number of analyses in a row that did not need the large tables, while the tables are large */
     private shortTexts = 0;
+    /** number of rows of the table of candidates that the last analysis used */
+    private usedRows = 0;
 
     constructor(dictionary: Dictionary) {
         this.trie = dictionary.trie;
@@ -156,17 +158,21 @@ export class Analyzer {
      * @param view the entries of the dictionary that the analysis sees: the ones of a dictionary version
      */
     analyze(text: string, tokens: Token[], view: DictionaryView): Token[] {
-        const rows = this.addTokens(text, tokens, view);
-        if (this.capacity > KEPT_ROWS || this.endHead.length > KEPT_ROWS) this.releaseLargeTables(rows, text.length);
+        this.addTokens(text, tokens, view);
+        if (this.capacity > KEPT_ROWS || this.endHead.length > KEPT_ROWS) {
+            this.releaseLargeTables(this.usedRows, text.length);
+        }
         return tokens;
     }
 
     /**
-     * @returns the number of rows of the table of candidates that the analysis used
+     * It leaves the number of rows that it used in `usedRows`.
+     * It does not return the number: the function is faster when it returns nothing.
      */
-    private addTokens(text: string, tokens: Token[], view: DictionaryView): number {
+    private addTokens(text: string, tokens: Token[], view: DictionaryView): void {
         const length = text.length;
-        if (length === 0) return 0;
+        this.usedRows = 0;
+        if (length === 0) return;
         if (this.endHead.length < length + 1) {
             this.endHead = new Int32Array(length * 2 + 1);
             this.endTail = new Int32Array(length * 2 + 1);
@@ -321,7 +327,8 @@ export class Analyzer {
             path = node;
             node = prev;
         }
-        if (path === NONE) return count;
+        this.usedRows = count;
+        if (path === NONE) return;
 
         const lastPosition = tokens.length > 0 ? tokens[tokens.length - 1].word_position : 0;
         const knownFeatures = this.knownFeatures;
@@ -366,6 +373,5 @@ export class Analyzer {
                 tokens.push(knownFeatures.token(entry, position, text.slice(start, end)));
             }
         }
-        return count;
     }
 }
