@@ -89,12 +89,15 @@ class LoadedDictionary {
     private readonly analyzer: Analyzer;
     /** date of a version -> tokenizer. The key of a dictionary without versions is "". */
     private readonly tokenizers = new Map<string, Tokenizer>();
+    /** The dates of the versions of the dictionary */
+    private readonly versionDates: ReadonlySet<unknown>;
     /** The date of the default version, or "" for a dictionary without versions */
     readonly defaultVersion: string;
     readonly defaultTokenizer: Tokenizer;
 
     constructor(private readonly dictionary: Dictionary) {
         this.analyzer = new Analyzer(dictionary);
+        this.versionDates = new Set((dictionary.versions ?? []).map((version) => version.date));
         // In this major version, the default version is the base dictionary
         this.defaultVersion = dictionary.versions !== null ? dictionary.versions[0].date : "";
         this.defaultTokenizer = this.createTokenizer(createDefaultView(dictionary));
@@ -124,6 +127,8 @@ class LoadedDictionary {
      */
     resolveVersion(dictionaryVersion: unknown): string {
         if (dictionaryVersion === undefined) return this.defaultVersion;
+        // The date of a version needs no check and no search. The type DictionaryVersion has only these dates.
+        if (this.versionDates.has(dictionaryVersion)) return dictionaryVersion as string;
         return resolveDictionaryVersion(dictionaryVersion, this.dictionary.versions);
     }
 
