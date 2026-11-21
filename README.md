@@ -226,15 +226,28 @@ kuromojin decides the dictionary path when the first call starts loading. It use
 1. `dicPath` of the options of that call
 2. The environment variable `KUROMOJIN_DIC_PATH`
 3. `globalThis.kuromojin.dicPath`
-4. The dictionary of the package (Node.js only)
+4. The dictionary of the package (Node.js, and a page built with a bundler that supports `new URL(path, import.meta.url)`)
 
 The dictionary is loaded once, and every later call uses the loaded one.
 
 ### Browser
 
-A browser needs the URL of a dictionary, and it needs [DecompressionStream](https://developer.mozilla.org/docs/Web/API/DecompressionStream).
+A browser needs [DecompressionStream](https://developer.mozilla.org/docs/Web/API/DecompressionStream).
 
-With a bundler, let the bundler copy the dictionary of the package and give its URL. The URL has to keep the ending `.dict`.
+With a bundler that supports [`new URL(path, import.meta.url)`](https://vite.dev/guide/assets#new-url-url-import-meta-url), such as [Vite](https://vite.dev/) and [webpack 5](https://webpack.js.org/guides/asset-modules/#url-assets), nothing has to be set.
+The bundler copies the dictionary of the package (`dict/kuromojin.dict`, 5 MB) into the build, and kuromojin loads it from the URL of the copy.
+This also works when kuromojin is used by a textlint rule written in CommonJS.
+
+```js
+import { tokenize } from "kuromojin";
+
+// loads the copy of the dictionary that the bundler put into the build
+const tokens = await tokenize(text);
+```
+
+The `browser` field of `package.json` gives a bundler this code, so a bundler that does not read the field, or that does not support the expression, such as esbuild, needs the dictionary path, as described below.
+
+To give the URL of the dictionary yourself, let the bundler copy the dictionary of the package and give its URL. The URL has to keep the ending `.dict`.
 
 [Vite](https://vite.dev/): import the file with `?url`. The [online playground](web/index.ts) is built in this way.
 

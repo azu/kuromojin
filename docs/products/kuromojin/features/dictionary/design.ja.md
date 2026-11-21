@@ -30,7 +30,13 @@ kuromojin は辞書を自分で読み込みます。
 パスは、呼び出しのたびではなく、読み込みを始めるときにだけ決めます。
 kuromojin は、最初の呼び出しの `options` の `dicPath`、`KUROMOJIN_DIC_PATH`、`globalThis.kuromojin.dicPath` の順に見ます。
 グローバルの設定は `globalThis` から読みます。ワーカーと Node.js には `window` がなく、ページでは `globalThis` が `window` であるためです。
-どれも設定されていなければ、自分のコードの隣の `dict` ディレクトリにある `kuromojin.dict` ファイルを使います。このファイルは、Node.js でのモジュールの場所から見つけます。
+どれも設定されていなければ、パッケージの `dict` ディレクトリにある `kuromojin.dict` ファイルを使います。
+この既定のパスは、小さなモジュールが返します。
+Node.js では、このモジュールは自分のコードの場所からファイルを見つけます。
+ブラウザ向けには、`package.json` の `browser` フィールドが、このモジュールを `new URL("../dict/kuromojin.dict", import.meta.url)` だけを持つ ES モジュールに置き換えます。
+この式に対応したバンドラーは、ファイルをビルドにコピーし、式をコピーの URL に置き換えます。
+パッケージのほかの部分は CommonJS のままなので、kuromojin を require するルールも置き換えたモジュールを使います。
+バンドラーが `import.meta` に対応していないときのように、式にベースの URL がないとき、このモジュールはパスを返さず、読み込みは辞書のパスがないエラーで失敗します。
 
 ### 一度だけの読み込み
 
@@ -141,6 +147,7 @@ flowchart TD
 - `getTokenizerOption.dicPath?: string` は、呼び出しの辞書のパスである。
 - 環境変数 `KUROMOJIN_DIC_PATH` は Node.js で読む。
 - `globalThis.kuromojin.dicPath` はどの環境でも読む。ページでは `window.kuromojin.dicPath` と同じである。
+- `package.json` の `browser` フィールドは、`lib/defaultDictionaryPath.js` を `src/defaultDictionaryPath.browser.mjs` に置き換える。このモジュールは `new URL(path, import.meta.url)` で `dict/kuromojin.dict` の URL を返す。
 - `.dict` で終わる辞書のパスは、kuromojin の形式の辞書のファイルである。
 - それ以外の辞書のパスは、kuromoji.js の 12 個のファイルを持つディレクトリまたは URL である。
 - npm パッケージは、パッケージの辞書 `kuromojin.dict` を持つ `dict` ディレクトリを公開する。
@@ -182,6 +189,18 @@ flowchart TD
 辞書のパスをいつもディレクトリとし、読み込みがまず `kuromojin.dict` を要求して、そのファイルがないときだけ kuromoji.js の 12 個のファイルを読む方法です。
 採用しませんでした。kuromoji.js の辞書を読み込むたびに、失敗するリクエストから始まるためです。
 また、そのリクエストの結果を「ファイルがない」という意味だと信頼できません。知らないパスのすべてにアプリケーションのページを返すサーバーは、辞書ではないファイルを返します。別の理由でリクエストが失敗したときは、もう一方の形式のファイルについてのエラーで終わります。
+
+### ブラウザでは CDN の URL を既定にする
+
+ブラウザでの既定のパスを、npm パッケージのファイルを配信する CDN にある、同じバージョンの辞書の URL にする方法です。
+どのバンドラーでも、バンドラーなしでも動きます。
+採用しませんでした。すべてのページが、ページの選んでいないサーバーに接続することになり、ページは kuromojin のコードを読まないとそれに気付けないためです。そのリクエストは、誰がページを使っているかをそのサーバーに伝えます。ページの Content Security Policy に止められることもあり、オフラインや閉じたネットワークのように、そのサーバーに接続できないページでは辞書を読み込めません。
+同じ理由で、バンドラーのコピーを読み込めないときにも、kuromojin は CDN に切り替えません。
+
+### `exports` フィールドで ES モジュールのビルドを加える
+
+パッケージ全体に ES モジュールのビルドを加え、`package.json` の `exports` フィールドで選ばせる方法です。
+採用しませんでした。`exports` フィールドは、一覧にないパッケージのパスを閉じます。たとえば、ページが今 import している `kuromojin/dict/kuromojin.dict` も閉じます。また、`browser` の条件を最初に書かない限り、kuromojin を require するルールは CommonJS のビルドを使い続けます。1 つのモジュールを置き換える方法なら、どちらも必要ありません。
 
 ### グローバルの設定を `window` だけから読む
 

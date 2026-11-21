@@ -30,7 +30,8 @@
   "browser": {
     "fs": false,
     "path": false,
-    "zlib": false
+    "zlib": false,
+    "./lib/defaultDictionaryPath.js": "./src/defaultDictionaryPath.browser.mjs"
   },
   "directories": {
     "test": "test"
