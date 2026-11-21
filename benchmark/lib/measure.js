@@ -11,6 +11,9 @@ const WORKER = path.join(__dirname, "../worker.js");
 const LOAD_RUNS = 7;
 // The number of processes that measure the times, for each build
 const TIME_ROUNDS = 3;
+// When the processes of one round take longer than this, no other round starts:
+// a build with a slow analysis is measured in fewer processes
+const MAX_ROUND_MS = 60000;
 const MAX_SHOWN_DIFFERENCES = 10;
 // A CPU profile has about this much analysis of the slowest build, and at most this many passes
 const CPU_PROFILE_MS = 1000;
@@ -102,7 +105,9 @@ const measureSet = (set, builds, outDir, tmpDir) => {
     const rounds = (measurement, count) => {
         const results = Object.fromEntries(builds.map((build) => [build.name, []]));
         for (let round = 0; round < count; round++) {
+            const start = Date.now();
             for (const build of builds) results[build.name].push(runWorker(build, set, setFile, measurement));
+            if (Date.now() - start > MAX_ROUND_MS) break;
         }
         return results;
     };

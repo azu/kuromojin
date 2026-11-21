@@ -151,7 +151,7 @@ Every item is measured through `getTokenizer` and `tokenize` of the build, or fr
 | Installed size | The size of the files of the package and of the files of its dependencies | A writer installs them with every project |
 | CPU time | A CPU profile of the load and the analysis, summed by package and by function | It tells which function to look at |
 
-A build whose analysis is slow is measured with fewer passes, so that a profile ends in a time that does not grow with the slowness of the build.
+A build whose analysis is slow is measured with fewer repetitions. Each measurement still runs at least once, so every item has a number.
 
 ##### Sets of texts
 

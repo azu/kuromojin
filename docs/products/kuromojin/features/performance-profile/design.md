@@ -41,7 +41,7 @@ The measurements of one set are:
 - **Tokens:** The process analyzes every line and every file, and returns a digest of the tokens of each. A digest is made from the fields of every token in a fixed order, so two builds give the same digest only for the same tokens.
 - **Load:** The process takes the time from before it loads the module until the Promise of `getTokenizer` resolves, and the used memory after garbage collections. Several processes run, and the median counts, because a load cannot be repeated in one process.
 - **Times:** The process repeats a pass over all lines, then a pass over all files, and returns the time of each pass. A pass is repeated at least three times and until the passes take half a second, and no pass starts after ten seconds. Then it calls `tokenize` many times for a hundred texts that it has passed before, which is less than any limit of the remembered tokens, and returns the time of a call. At the end it calls `tokenize` for every line and returns the used memory. Several processes run, and the fastest pass of all of them counts.
-- **Allocation:** The process counts the garbage collections of passes over all lines, and then samples the allocated bytes of the same number of passes, with the objects that a collection has already freed. The collections are counted without the sampling, because the sampling changes them. The numbers are for one pass. A small set gets more passes, so that it has enough samples.
+- **Allocation:** The process counts the garbage collections of passes over all lines, and then samples the allocated bytes of the same number of passes, with the objects that a collection has already freed. The collections are counted without the sampling, because the sampling changes them. The numbers are for one pass. A small set gets more passes, so that it has enough samples. Node.js 18 does not count the freed objects, so the allocation needs Node.js 20 or later.
 - **CPU profile:** Node.js writes a CPU profile of a process that loads the dictionary and runs a fixed number of passes over the lines and the files.
 
 The used memory is the heap and the buffers outside the heap, after forced garbage collections.
@@ -49,6 +49,7 @@ The used memory is the heap and the buffers outside the heap, after forced garba
 ### Two builds in turns
 
 For the load and the times, the comparison starts one process of the base, then one of the head, and repeats this.
+When one such round takes more than a minute, it is the last one, so a build with a slow analysis is measured in fewer processes.
 The number of passes of a CPU profile comes from the measured times: as many passes as the slower build runs in about one second. Both builds run this number, so their profiles are of the same work.
 
 ### Differences of the tokens

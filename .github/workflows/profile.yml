@@ -23,7 +23,8 @@ jobs:
   compare:
     name: compare with the base
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # A base that analyzes with kuromoji.js takes most of this time. Two builds of this analyzer take a few minutes
+    timeout-minutes: 60
     steps:
       - name: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
