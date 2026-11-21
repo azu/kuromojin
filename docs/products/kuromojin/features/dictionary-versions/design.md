@@ -91,8 +91,8 @@ All tokenizers share the loaded dictionary and the memory of the analysis, becau
 ### Reuse of tokens
 
 `tokenize` keeps one map of remembered tokens for all versions.
-The key is the date of the version and the text together, so that the tokens of one version are never returned for another one.
-The limit of the map counts the entries of all versions together.
+The key is the text. Its value has the tokens of each version together with the date of the version, so that the tokens of one version are never returned for another one.
+The limit of the map counts texts, so a text that is analyzed with several versions is one entry.
 
 ### Errors
 

@@ -139,6 +139,18 @@ describe("dictionary versions", function () {
                 const other = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-10-01") });
                 assert.notStrictEqual(other, first);
                 assert.deepStrictEqual(other, first);
+                // a text that is remembered for several versions gives each version its own array again
+                const base = await kuromojin.tokenize("令和元年");
+                assert.deepStrictEqual(surfaces(base), ["令", "和", "元年"]);
+                assert.strictEqual(
+                    await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") }),
+                    first
+                );
+                assert.strictEqual(
+                    await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-10-01") }),
+                    other
+                );
+                assert.strictEqual(await kuromojin.tokenize("令和元年"), base);
             });
         });
         it("resolves with one tokenizer for each version", async function () {

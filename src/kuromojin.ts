@@ -150,8 +150,14 @@ class LoadedDictionary {
 // The dictionary is loaded once. A failed load is kept, so every later call gets the same error.
 let loaded: LoadedDictionary | null = null;
 let loading: Promise<LoadedDictionary> | null = null;
-// cache for tokenize: version + "\n" + text -> tokens
-const tokenizeCacheMap = new LRUMap<string, KuromojiToken[]>(10000);
+/**
+ * The remembered tokens of a text for one dictionary version.
+ * `other` has the tokens of the same text for another version. Most texts are analyzed with one version.
+ */
+type RememberedTokens = { version: string; tokens: KuromojiToken[]; other: RememberedTokens | undefined };
+// cache for tokenize: text -> tokens of each version.
+// The key is the text as the caller passes it, so a lookup creates no string.
+const tokenizeCacheMap = new LRUMap<string, RememberedTokens>(10000);
 
 const load = (options?: getTokenizerOption): Promise<LoadedDictionary> => {
     if (loading === null) {
@@ -180,14 +186,13 @@ const tokenizeWith = (dictionary: LoadedDictionary, text: string, options?: getT
     if (options !== undefined && options.noCacheTokenize) {
         return tokenizer.tokenizeForSentence(text);
     }
-    // the key has the version, so that the tokens of one version are never returned for another one
-    const key = version + "\n" + text;
-    const cache = tokenizeCacheMap.get(key);
-    if (cache) {
-        return cache;
+    // the tokens of one version are never returned for another one
+    const first = tokenizeCacheMap.get(text);
+    for (let remembered = first; remembered !== undefined; remembered = remembered.other) {
+        if (remembered.version === version) return remembered.tokens;
     }
     const tokens = tokenizer.tokenizeForSentence(text);
-    tokenizeCacheMap.set(key, tokens);
+    tokenizeCacheMap.set(text, { version, tokens, other: first });
     return tokens;
 };
 

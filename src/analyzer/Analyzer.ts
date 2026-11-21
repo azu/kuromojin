@@ -14,10 +14,12 @@ const NONE = -1;
 const FIRST_ROWS = 4096;
 const FIRST_POSITIONS = 1024;
 /**
- * A table with more rows or positions than this is not kept after its analysis,
+ * A table with more rows or positions than this is a large table. It is released when the texts no longer need it,
  * so that one long text does not keep its memory until the process ends.
  */
 const KEPT_ROWS = 1 << 18;
+/** A large table is released after this many analyses in a row that did not need it */
+const SHORT_TEXTS_BEFORE_RELEASE = 100;
 /**
  * Split a text after each `、` and `。`, as `tokenize` of kuromoji.js does.
  */
@@ -78,6 +80,8 @@ export class Analyzer {
     // per UTF-16 index: first and last candidate that ends there
     private endHead = new Int32Array(FIRST_POSITIONS);
     private endTail = new Int32Array(FIRST_POSITIONS);
+    /** number of analyses in a row that did not need the large tables, while the tables are large */
+    private shortTexts = 0;
 
     constructor(dictionary: Dictionary) {
         this.trie = dictionary.trie;
@@ -117,9 +121,19 @@ export class Analyzer {
     }
 
     /**
-     * Go back to tables of the first size after the analysis of a long text.
+     * Go back to tables of the first size when the texts no longer need the large ones.
+     * The large tables are kept while long texts come: making them again for each long text
+     * would cost time and garbage collections.
+     * @param rows number of rows that the last analysis used
+     * @param length length of the text of the last analysis
      */
-    private release(): void {
+    private releaseLargeTables(rows: number, length: number): void {
+        if (rows > KEPT_ROWS || length >= KEPT_ROWS) {
+            this.shortTexts = 0;
+            return;
+        }
+        if (++this.shortTexts < SHORT_TEXTS_BEFORE_RELEASE) return;
+        this.shortTexts = 0;
         if (this.capacity > KEPT_ROWS) {
             this.capacity = FIRST_ROWS;
             this.nodeEntry = new Int32Array(FIRST_ROWS);
@@ -142,14 +156,17 @@ export class Analyzer {
      * @param view the entries of the dictionary that the analysis sees: the ones of a dictionary version
      */
     analyze(text: string, tokens: Token[], view: DictionaryView): Token[] {
-        this.addTokens(text, tokens, view);
-        this.release();
+        const rows = this.addTokens(text, tokens, view);
+        if (this.capacity > KEPT_ROWS || this.endHead.length > KEPT_ROWS) this.releaseLargeTables(rows, text.length);
         return tokens;
     }
 
-    private addTokens(text: string, tokens: Token[], view: DictionaryView): void {
+    /**
+     * @returns the number of rows of the table of candidates that the analysis used
+     */
+    private addTokens(text: string, tokens: Token[], view: DictionaryView): number {
         const length = text.length;
-        if (length === 0) return;
+        if (length === 0) return 0;
         if (this.endHead.length < length + 1) {
             this.endHead = new Int32Array(length * 2 + 1);
             this.endTail = new Int32Array(length * 2 + 1);
@@ -304,7 +321,7 @@ export class Analyzer {
             path = node;
             node = prev;
         }
-        if (path === NONE) return;
+        if (path === NONE) return count;
 
         const lastPosition = tokens.length > 0 ? tokens[tokens.length - 1].word_position : 0;
         const knownFeatures = this.knownFeatures;
@@ -349,5 +366,6 @@ export class Analyzer {
                 tokens.push(knownFeatures.token(entry, position, text.slice(start, end)));
             }
         }
+        return count;
     }
 }

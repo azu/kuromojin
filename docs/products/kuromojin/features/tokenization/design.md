@@ -70,7 +70,8 @@ This order is part of the result, because it decides the tokens of texts with eq
 The candidates are rows of a table, not objects.
 Each column of the table is an array of numbers: the entry, the start, the end, the right id, the previous candidate, the lowest cost, and the next candidate that ends at the same position.
 The tokenizer keeps the arrays between calls and makes them larger when a text needs more rows.
-After a text that needed more rows than a fixed number, it goes back to arrays of the first size, so one long text does not keep its memory until the process ends.
+Arrays with more rows than a fixed number are large arrays. The tokenizer keeps them while long texts come, and it goes back to arrays of the first size after 100 analyses in a row that did not need them.
+So one long text does not keep its memory until the process ends, and a series of long texts does not make the arrays again for each text.
 So an analysis creates objects only for the tokens that it returns.
 
 The tokenizer is synchronous, and JavaScript runs one call at a time, so sharing the arrays between calls is safe.
@@ -88,12 +89,13 @@ The other fields come from the entry, and a token of an unknown word gets no `re
 ### Reuse of tokens
 
 `tokenize(text, options)` first waits for the tokenizer.
-Then it looks up the dictionary version of the call and the text in a map to tokens.
-When the pair is there, it returns the stored array.
-When it is not, it calls `tokenizeForSentence(text)` of the tokenizer of that version, stores the returned array under the pair, and returns it.
+Then it looks up the text in a map. The value of a text has the tokens of each dictionary version that the text was analyzed with.
+When the tokens of the dictionary version of the call are there, it returns the stored array.
+When they are not, it calls `tokenizeForSentence(text)` of the tokenizer of that version, stores the returned array for the text and the version, and returns it.
 With `noCacheTokenize: true`, it calls `tokenizeForSentence(text)` and returns the result without reading or writing the map.
 
-The map keeps the 10,000 most recently used pairs and removes the least recently used one when it is full.
+The key of the map is the text as the caller passes it, so a lookup creates no string.
+The map keeps the 10,000 most recently used texts and removes the least recently used one, with its tokens of all versions, when it is full.
 It is a variable of the module, so each installed copy of kuromojin has its own map, and all callers of one copy share it.
 The stored arrays are not copied or frozen. The read-only type of the result is what keeps callers from changing them.
 
@@ -104,7 +106,7 @@ No diagram is needed. An analysis is one pass over the text followed by one walk
 ## Data model and ER diagrams
 
 The token is the object described in the [fields of a token](requirements.md#fields-of-a-token).
-The cache is one map whose key is the dictionary version and the text, and whose value is the array of tokens.
+The cache is one map whose key is the text, and whose value is the arrays of tokens of the text, one for each dictionary version that the text was analyzed with.
 The table of candidates lives only during one analysis and is described under [Memory of one analysis](#memory-of-one-analysis).
 
 ## APIs and interfaces
