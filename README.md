@@ -7,11 +7,11 @@ It has its own analyzer and its own dictionary file, so it does not depend on ku
 
 ## Features
 
-- Promise based API
+- One call returns the tokens: `tokenize(text)` returns a `Promise` of the tokens
 - Works in Node.js and in browsers
-- Cache Layer
+- Shares the work between callers in the same process, such as the textlint rules of one run
     - Loads the dictionary once
-    - Returns the same tokens for the same text
+    - Analyzes a text once, and returns the same tokens for the same text
 - One dictionary file in the package
     - It also loads a dictionary of kuromoji.js
 - [Dictionary versions](#dictionary-versions): the dictionary gets new words without changing the tokens of a caller that did not ask for them
@@ -26,51 +26,135 @@ It has its own analyzer and its own dictionary file, so it does not depend on ku
 
 ## Usage
 
-kuromojin exports two functions.
-
-- `tokenize(text, options?)` returns a `Promise` that is resolved with the tokens of the text.
-- `getTokenizer(options?)` returns a `Promise` that is resolved with a tokenizer.
-    - `tokenizer.tokenizeForSentence(text)` analyzes the whole text as one piece.
-    - `tokenizer.tokenize(text)` splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces.
-
-The array and the objects that `tokenize()` and the tokenizer return are read-only, because the same array is returned for the same text.
-`tokenizer.tokenizeForSentence(text)` shares the remembered tokens with `tokenize(text)`.
-`getTokenizer({ noCacheTokenize: true })` resolves with a tokenizer that analyzes every text again and returns a new array.
+Use `tokenize(text)`. It loads the dictionary on the first call, and resolves with the tokens of the text.
 
 ```js
-import { tokenize, getTokenizer } from "kuromojin";
+import { tokenize } from "kuromojin";
 
-getTokenizer().then((tokenizer) => {
-    const tokens = tokenizer.tokenizeForSentence(text);
-});
+const tokens = await tokenize("黒文字");
+console.log(tokens);
+/*
+[ {
+    word_id: 1084020,
+    word_type: 'KNOWN',
+    word_position: 1,
+    surface_form: '黒文字',
+    pos: '名詞',
+    pos_detail_1: '一般',
+    pos_detail_2: '*',
+    pos_detail_3: '*',
+    conjugated_type: '*',
+    conjugated_form: '*',
+    basic_form: '黒文字',
+    reading: 'クロモジ',
+    pronunciation: 'クロモジ'
+} ]
+*/
+```
 
-tokenize(text).then((tokens) => {
-    console.log(tokens);
-    /*
-    [ {
-        word_id: 1084020,         // 辞書内での単語ID
-        word_type: 'KNOWN',       // 単語タイプ(辞書に登録されている単語ならKNOWN, 未知語ならUNKNOWN)
-        word_position: 1,         // 単語の開始位置
-        surface_form: '黒文字',    // 表層形
-        pos: '名詞',               // 品詞
-        pos_detail_1: '一般',      // 品詞細分類1
-        pos_detail_2: '*',        // 品詞細分類2
-        pos_detail_3: '*',        // 品詞細分類3
-        conjugated_type: '*',     // 活用型
-        conjugated_form: '*',     // 活用形
-        basic_form: '黒文字',      // 基本形
-        reading: 'クロモジ',       // 読み
-        pronunciation: 'クロモジ'  // 発音
-      } ]
-    */
-});
+### Which function to use
+
+kuromojin exports two functions, `tokenize` and `getTokenizer`.
+`tokenize` is the one to use in most code, including textlint rules.
+
+| You want | Use |
+| --- | --- |
+| The tokens of a text | `await tokenize(text)` |
+| The tokens without a `Promise` for each text, for example in a loop over many texts or in a synchronous function | `const tokenizer = await getTokenizer()` once, then `tokenizer.tokenizeForSentence(text)` |
+| The tokens that `tokenize` of kuromoji.js returns | `tokenizer.tokenize(text)` |
+
+- `tokenize(text)` and `tokenizer.tokenizeForSentence(text)` return the same tokens. They even return the same array, because they share the remembered tokens. The only difference is that `tokenize(text)` returns a `Promise` and waits for the dictionary by itself.
+- `getTokenizer()` is not faster for one text. Once the dictionary is loaded, `tokenize(text)` does not load anything again. `getTokenizer()` is for code that can not wait for a `Promise` at each text.
+- `tokenizer.tokenize(text)` is a different analysis: it splits the text after each `、` and `。` before the analysis. Its tokens differ from the ones of `tokenize(text)` for some texts. It exists for code that was written for `tokenize` of kuromoji.js. Do not use it in new code.
+
+:warning: The names are confusing: `tokenize` of kuromojin is the same as `tokenizeForSentence` of the tokenizer, not as `tokenize` of the tokenizer.
+
+## API
+
+### `tokenize(text, options?): Promise<Readonly<Readonly<KuromojiToken>[]>>`
+
+Returns a `Promise` that is resolved with the tokens of the text.
+It analyzes the whole text as one piece.
+
+```js
+import { tokenize } from "kuromojin";
+
+const tokens = await tokenize("すもももももももものうち");
+const nouns = tokens.filter((token) => token.pos === "名詞");
+```
+
+### `getTokenizer(options?): Promise<Tokenizer>`
+
+Returns a `Promise` that is resolved with a tokenizer after the dictionary is loaded.
+The tokenizer has two synchronous functions and nothing else.
+
+- `tokenizer.tokenizeForSentence(text)` analyzes the whole text as one piece, as `tokenize(text)` of kuromojin does.
+- `tokenizer.tokenize(text)` splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces. `word_position` still counts from the start of the text.
+
+```js
+import { getTokenizer } from "kuromojin";
+
+const tokenizer = await getTokenizer();
+for (const sentence of sentences) {
+    // no Promise here
+    const tokens = tokenizer.tokenizeForSentence(sentence);
+}
+```
+
+For example, the two functions of the tokenizer give different tokens for `なぜなら` in this text.
+
+```js
+const text = "あります。なぜならJavaScriptは";
+tokenizer.tokenizeForSentence(text); // あり, ます, 。, なぜ, なら, JavaScript, は
+tokenizer.tokenize(text); // あり, ます, 。, なぜなら, JavaScript, は
 ```
 
 ### Options
 
+`tokenize` and `getTokenizer` take the same options.
+
 - `dicPath?: string`: the [dictionary path](#dictionary). It is used only by the call that starts loading the dictionary.
 - `dictionaryVersion?: DictionaryVersion`: the [dictionary version](#dictionary-versions) of the call, as a date written as `YYYY-MM-DD`. The type `DictionaryVersion` is the union of the dates of the versions.
-- `noCacheTokenize?: boolean`: `tokenize()` analyzes the text again and does not remember the tokens, and `getTokenizer()` resolves with a tokenizer that analyzes every text again. Default: `false`
+- `noCacheTokenize?: boolean`: turns off the [reuse of tokens](#returned-tokens-are-shared-and-read-only). `tokenize()` analyzes the text again and does not remember the tokens, and `getTokenizer()` resolves with a tokenizer that analyzes every text again. Default: `false`
+
+### Token
+
+| Field | Meaning |
+| --- | --- |
+| `word_id` | The identifier of the word in the dictionary |
+| `word_type` | `KNOWN` for a word in the dictionary, `UNKNOWN` for an unknown word |
+| `word_position` | The position of the first character of the word in the text. The first character of the text is 1 |
+| `surface_form` | The word as written in the text (表層形) |
+| `pos` | The part of speech (品詞), such as `名詞` or `助詞` |
+| `pos_detail_1`, `pos_detail_2`, `pos_detail_3` | The subcategories of the part of speech (品詞細分類). `*` when there is none |
+| `conjugated_type` | The conjugation type (活用型). `*` when the word does not conjugate |
+| `conjugated_form` | The conjugation form (活用形). `*` when the word does not conjugate |
+| `basic_form` | The base form (基本形). `*` for an unknown word |
+| `reading` | The reading in katakana (読み). A token of an unknown word does not have this field |
+| `pronunciation` | The pronunciation in katakana (発音). A token of an unknown word does not have this field |
+
+`word_position` counts characters, and a character outside the Basic Multilingual Plane, such as `𩸽` or an emoji, is one character.
+So `word_position - 1` is the index in the JavaScript string only when no such character comes before the word.
+
+The TypeScript type of a token is `KuromojiToken`.
+
+### Returned tokens are shared and read-only
+
+kuromojin remembers the tokens of the 1,000 most recently used texts, and returns the same array for the same text and the same dictionary version.
+When many textlint rules ask for the tokens of the same sentence, the sentence is analyzed once.
+
+- `tokenize(text)` and `tokenizer.tokenizeForSentence(text)` share the remembered tokens.
+- `tokenizer.tokenize(text)` remembers its tokens apart from them, because its tokens differ.
+
+All callers get the same array and the same objects, so do not change them. Their types are read-only for this reason.
+Copy the array when you need to change it, for example `tokens.slice()` or `tokens.map((token) => ({ ...token }))`.
+
+`noCacheTokenize: true` gives a new array on every call. It neither reads nor changes the remembered tokens.
+
+```js
+const tokens = await tokenize(text, { noCacheTokenize: true });
+const tokenizer = await getTokenizer({ noCacheTokenize: true });
+```
 
 ## Dictionary
 
@@ -123,28 +207,33 @@ import dictionaryUrl from "kuromojin/dict/kuromojin.dict";
 const tokenizer = await getTokenizer({ dicPath: dictionaryUrl });
 ```
 
+Without a bundler, give the URL of the file on a CDN that serves the files of npm packages, such as [jsDelivr](https://www.jsdelivr.com/).
+Replace `<version>` with the exact version of kuromojin that your page uses, 3.1.0 or later: the dictionary is in the package since 3.1.0. The file of a version never changes, so the tokens do not change until you change the URL.
+
+```js
+import { getTokenizer } from "kuromojin";
+
+const tokenizer = await getTokenizer({
+    dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict"
+});
+```
+
 `globalThis.kuromojin.dicPath` sets the dictionary path for every module that uses kuromojin in the page, such as textlint rules.
 
 ```js
 import { getTokenizer } from "kuromojin";
 // Affects all modules that use kuromojin.
 globalThis.kuromojin = {
-    dicPath: "https://kuromojin.netlify.app/dict/kuromojin.dict"
+    dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict"
 };
-// this `getTokenizer` loads "https://kuromojin.netlify.app/dict/kuromojin.dict"
+// this `getTokenizer` loads the dictionary of `globalThis.kuromojin.dicPath`
 getTokenizer();
 ```
 
-:memo: Dictionary URLs for trials
+For compatibility, a URL of the `dict` directory of kuromoji.js also works as the dictionary path, as described under [Dictionary](#dictionary). The dictionary of kuromojin gives the same tokens with a smaller download.
 
-The website of kuromojin serves these files to pages of any origin.
-They are for trials: they change when the website is built from a newer kuromojin, so serve the dictionary from your own site in production.
-
-- `https://kuromojin.netlify.app/dict/kuromojin.dict`
-    - the dictionary of kuromojin
-- `https://kuromojin.netlify.app/dict`
-    - the dictionary of kuromoji.js 0.1.2
-    - example: https://kuromojin.netlify.app/dict/base.dat.gz
+:memo: `https://kuromojin.netlify.app/dict/kuromojin.dict` and `https://kuromojin.netlify.app/dict` still work for the pages that already load them.
+Do not use them in a new page: the website of kuromojin is not a CDN, and its dictionary changes when the website is built from a newer kuromojin.
 
 ## Dictionary versions
 
@@ -176,50 +265,66 @@ kuromojin returns the tokens of kuromoji.js 0.1.2 for the same text and the same
 - A text with a character outside the Basic Multilingual Plane, such as `𩸽` or an emoji: kuromoji.js loses characters after such a character. kuromojin keeps every character of the text in a token.
 - The tokenizer of `getTokenizer()` has only `tokenize` and `tokenizeForSentence`.
 
-### Note: backward compatibility for <= 1.1.0
+### Why kuromojin has its own analyzer
 
-kuromojin v1.1.0 export `tokenize` as default function.
+Up to 3.0, kuromojin was a wrapper of kuromoji.js. Since 3.1.0, it analyzes with its own analyzer and its own dictionary file, because the analysis was the largest cost of a textlint run with Japanese rules.
+The tokens stay the same, and these get smaller. The numbers are rough directions from the measurement of [#27](https://github.com/azu/kuromojin/pull/27), not promises.
 
-kuromojin v2.0.0 remove the default function.
+| | Compared with kuromojin 3.0 (kuromoji.js 0.1.2) |
+| --- | --- |
+| Time of the analysis of a text | 90%+ less |
+| Time of the load of the dictionary | 70%+ less |
+| Memory after the load | 70%+ less |
+| Installed size with dependencies | 85%+ less (about 48 MB to about 5 MB) |
+| Time of a textlint run with [textlint-rule-preset-ja-technical-writing](https://github.com/textlint-ja/textlint-rule-preset-ja-technical-writing) | 60%+ less |
 
-```js
-import kuromojin from "kuromojin";
-// kuromojin === tokenize
-```
+`yarn run compare` measures these for a change, and CI runs it for each pull request, so that kuromojin does not get slower again.
 
-Recommended: use `import {tokenize} from "kuromojin"` instead of it
+### Moving from kuromoji.js
 
-```js
-import {tokenize} from "kuromojin";
-```
+Code that moves from kuromoji.js to kuromojin replaces the functions in this way.
 
-## FAQ: textlint is slow / kuromoji dictionary is loaded many times
+| kuromoji.js | kuromojin |
+| --- | --- |
+| `kuromoji.builder({ dicPath }).build(callback)` | `await getTokenizer({ dicPath })`, or nothing when the code uses `tokenize` of kuromojin |
+| `tokenizer.tokenizeForSentence(text)` | `await tokenize(text)` or `tokenizer.tokenizeForSentence(text)` |
+| `tokenizer.tokenize(text)` | `tokenizer.tokenize(text)` |
 
-kuromojin keeps the loaded dictionary and the tokenize cache per installed copy of kuromojin.
-If your `node_modules` contains multiple copies of kuromojin, each copy loads the dictionary and tokenizes the same text again.
+kuromojin has no default export. Import the functions by name: `import { tokenize } from "kuromojin"`.
 
-Check how many copies are installed:
+## Troubleshooting: use one copy of kuromojin
+
+kuromojin shares the loaded dictionary and the remembered tokens only inside one installed copy of kuromojin.
+If your `node_modules` contains several copies of kuromojin, each copy loads its own dictionary and analyzes the same text again, so a textlint run takes more time and more memory.
+An older copy is also slower by itself, because kuromojin 3.0 and earlier analyze with kuromoji.js.
+
+Check which copies are installed. One version in the output without nested copies is the goal.
 
 ```sh
 npm ls kuromojin --all
 ```
 
-This often happens when one old rule depends on an older major version of kuromojin (for example `kuromojin@^2`) and the other rules depend on `kuromojin@^3`.
-npm can not merge different major versions, so each `^3` rule gets its own nested copy.
+Several copies come from textlint rules that depend on different versions of kuromojin.
+For example, when one old rule depends on `kuromojin@^2` and the other rules depend on `kuromojin@^3`, npm can not merge the two major versions, and each `^3` rule can get its own nested copy.
 
-### Solution 1: update your rules
+### Solution 1: update kuromojin and your rules
 
-Update the textlint rules to the latest version so that all of them depend on `kuromojin@^3`.
+Update kuromojin to the latest version, and update the textlint rules so that all of them depend on `kuromojin@^3`.
 npm then installs a single copy.
+
+```sh
+npm update kuromojin
+npm dedupe
+```
 
 ### Solution 2: use `overrides`
 
-If some rules can not be updated, force a single version with [`overrides`](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides) in your `package.json`:
+If a rule can not be updated, force a single version with [`overrides`](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#overrides) in your `package.json`.
 
 ```json
 {
   "overrides": {
-    "kuromojin": "^3.0.1"
+    "kuromojin": "^3.1.0"
   }
 }
 ```
@@ -229,8 +334,8 @@ Run `npm install` again and check `npm ls kuromojin --all`.
 - Yarn: use [`resolutions`](https://yarnpkg.com/configuration/manifest#resolutions)
 - pnpm: use [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides)
 
-Note: kuromojin 3 returns the tokens of kuromoji@0.1.2, which tokenizes some unknown words differently from kuromoji@0.1.1 used by kuromojin 2 ([takuyaa/kuromoji.js#37](https://github.com/takuyaa/kuromoji.js/issues/37)).
-The dictionary is the same.
+An override changes the tokens that a rule for `kuromojin@^2` gets in a few texts: kuromojin 3 returns the tokens of kuromoji.js 0.1.2, which analyzes some unknown words differently from kuromoji.js 0.1.1 of kuromojin 2 ([takuyaa/kuromoji.js#37](https://github.com/takuyaa/kuromoji.js/issues/37)).
+The words of the dictionary are the same.
 
 ## Related
 
