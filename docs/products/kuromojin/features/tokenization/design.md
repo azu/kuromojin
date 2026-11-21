@@ -96,7 +96,7 @@ With `noCacheTokenize: true`, it calls `tokenizeForSentence(text)` and returns t
 
 The key of the map is the text as the caller passes it, so a lookup creates no string.
 The map keeps the 1,000 most recently used texts and removes the least recently used one, with its tokens of all versions, when it is full.
-It is a `Map` of JavaScript that keeps the texts in the order of their last use: a lookup that finds a text deletes it and adds it again at the end, and a store that makes the map hold more than 1,000 texts deletes the first one.
+It is a `Map` of JavaScript whose entries are also linked in the order of their last use. A lookup that finds a text moves its entry to the newest end of the links, and a store that makes the map hold more than 1,000 texts deletes the entry at the oldest end. Moving an entry changes a few references and does not delete and add the text in the `Map` again, because that is slower.
 It is a variable of the module, so each installed copy of kuromojin has its own map, and all callers of one copy share it.
 The stored arrays are not copied or frozen. The read-only type of the result is what keeps callers from changing them.
 
@@ -192,7 +192,7 @@ It was not chosen, because most repeated calls for a text come right after each 
 ### Use a package for the map
 
 The map could come from a package that implements a least recently used map, such as `lru_map`.
-It was not chosen, because the map needs only a lookup and a store, and a `Map` of JavaScript, which keeps its keys in the order they were added, does both in a few lines. A package adds a dependency to every installation for no gain.
+It was not chosen, because the map needs only a lookup and a store, which take a few dozen lines on top of a `Map` of JavaScript. A package adds a dependency to every installation for no gain.
 
 ## Open questions
 
