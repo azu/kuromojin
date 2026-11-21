@@ -130,43 +130,43 @@ tokenizer.tokenize(text); // あり, ます, 。, なぜなら, JavaScript, は
 ### Token
 
 A token is one word of the text, with what the dictionary says about it.
-`tokenize("黒文字を買った")` resolves with four tokens: `黒文字`, `を`, `買っ`, and `た`. This is the token of `買っ`.
+`tokenize("日本語の文章を書いた")` resolves with six tokens: `日本語`, `の`, `文章`, `を`, `書い`, and `た`. This is the token of `書い`, the verb `書く` in the form that comes before `た`.
 
 ```json
 {
-    "word_id": 3262940,
+    "word_id": 2614820,
     "word_type": "KNOWN",
-    "word_position": 5,
-    "surface_form": "買っ",
+    "word_position": 8,
+    "surface_form": "書い",
     "pos": "動詞",
     "pos_detail_1": "自立",
     "pos_detail_2": "*",
     "pos_detail_3": "*",
-    "conjugated_type": "五段・ワ行促音便",
+    "conjugated_type": "五段・カ行イ音便",
     "conjugated_form": "連用タ接続",
-    "basic_form": "買う",
-    "reading": "カッ",
-    "pronunciation": "カッ"
+    "basic_form": "書く",
+    "reading": "カイ",
+    "pronunciation": "カイ"
 }
 ```
 
-To see the tokens of any text, type it in the [online playground](https://kuromojin.netlify.app/#%E9%BB%92%E6%96%87%E5%AD%97%E3%82%92%E8%B2%B7%E3%81%A3%E3%81%9F). It is the quickest way to find which values a word gets before you write a condition on them.
+To see the tokens of any text, type it in the [online playground](https://kuromojin.netlify.app/#%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%81%AE%E6%96%87%E7%AB%A0%E3%82%92%E6%9B%B8%E3%81%84%E3%81%9F). It is the quickest way to find which values a word gets before you write a condition on them.
 
 #### Fields
 
-| Field | Meaning | Example (`買っ`) |
+| Field | Meaning | Example (`書い`) |
 | --- | --- | --- |
-| `surface_form` | The word as written in the text (表層形) | `買っ` |
-| `basic_form` | The base form (基本形). `*` for an unknown word | `買う` |
+| `surface_form` | The word as written in the text (表層形) | `書い` |
+| `basic_form` | The base form (基本形). `*` for an unknown word | `書く` |
 | `pos` | The [part of speech](#parts-of-speech) (品詞) | `動詞` |
 | `pos_detail_1`, `pos_detail_2`, `pos_detail_3` | The subcategories of the part of speech (品詞細分類), from general to specific. `*` when there is none | `自立`, `*`, `*` |
-| `conjugated_type` | The conjugation type (活用型). `*` when the word does not conjugate | `五段・ワ行促音便` |
+| `conjugated_type` | The conjugation type (活用型). `*` when the word does not conjugate | `五段・カ行イ音便` |
 | `conjugated_form` | The conjugation form (活用形). `*` when the word does not conjugate | `連用タ接続` |
-| `reading` | The reading in katakana (読み). A token of an unknown word does not have this field | `カッ` |
-| `pronunciation` | The pronunciation in katakana (発音). A token of an unknown word does not have this field | `カッ` |
-| `word_position` | The position of the first character of the word in the text. The first character of the text is 1 | `5` |
+| `reading` | The reading in katakana (読み). A token of an unknown word does not have this field | `カイ` |
+| `pronunciation` | The pronunciation in katakana (発音). A token of an unknown word does not have this field | `カイ` |
+| `word_position` | The position of the first character of the word in the text. The first character of the text is 1 | `8` |
 | `word_type` | `KNOWN` for a word in the dictionary, `UNKNOWN` for an unknown word | `KNOWN` |
-| `word_id` | The identifier of the word in the dictionary | `3262940` |
+| `word_id` | The identifier of the word in the dictionary | `2614820` |
 
 `word_position` counts characters, and a character outside the Basic Multilingual Plane, such as `𩸽` or an emoji, is one character.
 So `word_position - 1` is the index in the JavaScript string only when no such character comes before the word.
@@ -182,7 +182,7 @@ The values are the ones of the IPADIC dictionary, in Japanese. `pos` is one of t
 | `pos` | English | `pos_detail_1` | Example |
 | --- | --- | --- | --- |
 | `名詞` | Noun | `一般`, `固有名詞`, `サ変接続`, `形容動詞語幹`, `副詞可能`, `代名詞`, `数`, `接尾`, `非自立`, `ナイ形容詞語幹`, `接続詞的`, `動詞非自立的`, `特殊`, `引用文字列` | `辞書`, `東京`, `解析` |
-| `動詞` | Verb | `自立`, `非自立`, `接尾` | `買う`, `いる` |
+| `動詞` | Verb | `自立`, `非自立`, `接尾` | `書く`, `いる` |
 | `形容詞` | Adjective | `自立`, `非自立`, `接尾` | `速い` |
 | `副詞` | Adverb | `一般`, `助詞類接続` | `とても` |
 | `連体詞` | Adnominal | `*` | `この`, `大きな` |
