@@ -97,6 +97,28 @@ The parts store the same data as the dictionary of kuromoji.js, arranged so that
 - **Strings of the features:** The base forms, the readings, and the pronunciations are positions in one list of distinct strings, in the order of the first entry that has each string. A character of the katakana block is one byte, and any other character is three bytes, because almost every reading and pronunciation is written in katakana. The combinations are a short list of their own.
 - **Unknown words:** The classes of characters and the entries of unknown words, as in the dictionary of kuromoji.js.
 
+The following diagram shows the features of three entries.
+A column is one row of the diagram, and the entries are in the order of their numbers.
+The base form of 黒文字 and 東京 is the word as written, and the pronunciation of 黒文字 and 書い is the reading, so these values are not stored.
+
+```mermaid
+block-beta
+    columns 5
+    e0["Entry"] e1["黒文字"] e2["書い"] e3["東京"] e4["…"]
+    c0["Combination"] c1["noun"] c2["verb"] c3["noun"] c4["…"]
+    r0["Reading"] r1["クロモジ"] r2["カイ"] r3["トウキョウ"] r4["…"]
+    b0["Has a base form"] b1["0"] b2["1"] b3["0"] b4["…"]
+    p0["Has a pronunciation"] p1["0"] p2["0"] p3["1"] p4["…"]
+    space:5
+    v0["Base forms"] v1["書く"] v2["…"] space:2
+    w0["Pronunciations"] w1["トーキョー"] w2["…"] space:2
+    b2 --> v1
+    p3 --> w1
+```
+
+The value of an entry is at the position that is the number of 1 bits before the entry.
+書い is the first entry with a base form, so its base form is the first value of the base forms.
+
 A position in a list and the number of an entry are mostly a little larger than the one before.
 Each number of such a column is written as the difference from the one before, in three bytes, and the differences are written as planes: first the lowest byte of every difference, then the next byte of every difference, and then the highest.
 The planes of the higher bytes are long runs of the same value, which gzip makes small.
