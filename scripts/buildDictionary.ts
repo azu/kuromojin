@@ -462,6 +462,13 @@ export const toIpadicLine = (entry: DictionaryEntry): string =>
     ].join(",");
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** A date of the calendar, written as YYYY-MM-DD */
+const isCalendarDate = (text: string): boolean => {
+    if (!DATE.test(text)) return false;
+    const time = Date.parse(text + "T00:00:00Z");
+    // Date.parse takes the day 31 in every month and gives a day of the next month, so the date is written again
+    return !Number.isNaN(time) && new Date(time).toISOString().slice(0, 10) === text;
+};
 const isWellFormed = (text: string) =>
     !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(text);
 
@@ -496,7 +503,8 @@ export function parseVersions(
         if (raw.trim() === "" || raw.startsWith("#")) return;
         const fields = raw.split(",");
         const [date, kind] = fields;
-        if (!DATE.test(date) || Number.isNaN(Date.parse(date + "T00:00:00Z"))) {
+        // a caller names a version by this date, so it has to be a date of the calendar
+        if (!isCalendarDate(date)) {
             throw new Error(`Line ${line}: "${date}" is not a date written as YYYY-MM-DD.`);
         }
         let version = versions[versions.length - 1];
@@ -574,9 +582,6 @@ export function checkReleasedVersions(
 }
 
 /**
- * The list of the dictionary versions for readers, as Markdown.
- */
-/**
  * The TypeScript source of the type of the dates that a caller can pass as `dictionaryVersion`:
  * the dates of the versions of the dictionary of the package.
  * The lines are as Prettier writes them.
@@ -600,6 +605,9 @@ export function renderVersionType(baseVersion: string, versions: VersionChanges[
     ].join("\n");
 }
 
+/**
+ * The list of the dictionary versions for readers, as Markdown.
+ */
 export function renderVersionList(baseVersion: string, versions: VersionChanges[], baseEntries: BaseEntry[]): string {
     const lines = [
         "# Dictionary versions",

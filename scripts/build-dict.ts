@@ -3,7 +3,7 @@
 //
 // usage:
 //   ts-node scripts/build-dict.ts                    build the dictionary of the package
-//   ts-node scripts/build-dict.ts --entries <word>   print the entries of a word of the base dictionary
+//   ts-node scripts/build-dict.ts --entries <word>   print the entries of a word with their numbers
 //   ts-node scripts/build-dict.ts --rewrite-versions build even when a version of the existing file is changed.
 //                                                    Use it only for versions that are not released yet.
 import fs from "node:fs";
@@ -33,19 +33,17 @@ const args = process.argv.slice(2);
 const files = readKuromojiFiles(kuromojiDirectory);
 const baseEntries = readBaseEntries(files);
 
+const versions = parseVersions(fs.readFileSync(versionsSource, "utf8"), BASE_VERSION, baseEntries, files["cc.dat.gz"]);
+
 const entriesIndex = args.indexOf("--entries");
 if (entriesIndex !== -1) {
     const word = args[entriesIndex + 1];
-    for (const entry of baseEntries) {
-        if (entry.surface_form === word) console.log(`${entry.number},${toIpadicLine(entry)}`);
-    }
+    // the entries that versions add have the numbers after the entries of the base dictionary
+    const entries = [...baseEntries, ...versions.flatMap((version) => version.added)];
+    entries.forEach((entry, number) => {
+        if (entry.surface_form === word) console.log(`${number},${toIpadicLine(entry)}`);
+    });
 } else {
-    const versions = parseVersions(
-        fs.readFileSync(versionsSource, "utf8"),
-        BASE_VERSION,
-        baseEntries,
-        files["cc.dat.gz"]
-    );
     const dictionary = buildDictionary(files, { baseVersion: BASE_VERSION, versions });
     if (fs.existsSync(dictionaryFile) && !args.includes("--rewrite-versions")) {
         checkReleasedVersions(

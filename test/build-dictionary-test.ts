@@ -82,6 +82,10 @@ describe("build of the dictionary", function () {
         });
         it("rejects a line that is not a change", function () {
             assert.throws(() => parse(`2027-4-1,add,${reiwa}`), /Line 1: "2027-4-1" is not a date/);
+            // a caller names a version by its date, so a date that no calendar has is not a version
+            assert.throws(() => parse(`2027-02-30,add,${reiwa}`), /Line 1: "2027-02-30" is not a date/);
+            assert.throws(() => parse(`2027-04-31,add,${reiwa}`), /Line 1: "2027-04-31" is not a date/);
+            assert.strictEqual(parse(`2028-02-29,add,${reiwa}`)[0].date, "2028-02-29");
             assert.throws(() => parse(`2027-04-01,change,${reiwa}`), /Line 1: the second field is "add" or "remove"/);
             assert.throws(() => parse(`2027-04-01,add,令和,1288,1288`), /Line 1: an entry has 13 fields/);
             assert.throws(
