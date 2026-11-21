@@ -1,7 +1,7 @@
 {
   "name": "kuromojin",
   "version": "3.0.2",
-  "description": "Japanese morphological analyzer with a Promise API and a cache, compatible with the tokens of kuromoji.js",
+  "description": "Japanese morphological analyzer with a bundled dictionary and cached tokenize().",
   "keywords": [
     "kuromoji",
     "kuromoji.js",
