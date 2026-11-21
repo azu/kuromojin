@@ -245,34 +245,15 @@ import { tokenize } from "kuromojin";
 const tokens = await tokenize(text);
 ```
 
-The `browser` field of `package.json` gives a bundler this code, so a bundler that does not read the field, or that does not support the expression, such as esbuild, needs the dictionary path, as described below.
-
-To give the URL of the dictionary yourself, let the bundler copy the dictionary of the package and give its URL. The URL has to keep the ending `.dict`.
-
-[Vite](https://vite.dev/): import the file with `?url`. The [online playground](web/index.ts) is built in this way.
+The `browser` field of `package.json` gives a bundler this code. A bundler that does not read the field or does not support the expression, such as esbuild, needs the dictionary path.
+With esbuild, copy the dictionary with the [file loader](https://esbuild.github.io/content-types/#file) and give its URL. The URL has to keep the ending `.dict`.
 
 ```js
-import { tokenize } from "kuromojin";
-import dictionaryUrl from "kuromojin/dict/kuromojin.dict?url";
-
-const tokens = await tokenize(text, { dicPath: dictionaryUrl });
-```
-
-[webpack](https://webpack.js.org/): handle `.dict` files as [asset modules](https://webpack.js.org/guides/asset-modules/).
-
-```js
-// webpack.config.js
-module.exports = {
-    module: {
-        rules: [{ test: /\.dict$/, type: "asset/resource" }]
-    }
-};
-```
-
-```js
+// esbuild main.js --bundle --loader:.dict=file --outdir=dist
 import { tokenize } from "kuromojin";
 import dictionaryUrl from "kuromojin/dict/kuromojin.dict";
 
+// dictionaryUrl is relative to the page unless --public-path is set
 const tokens = await tokenize(text, { dicPath: dictionaryUrl });
 ```
 
