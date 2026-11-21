@@ -6,7 +6,7 @@ import { isNode } from "./analyzer/loader/platform";
  *
  * Node.js: the file `dict/kuromojin.dict` next to the code of the package.
  * A bundler for a browser reads the "browser" field of package.json and uses
- * `defaultDictionaryPath.browser.mjs` instead of this module.
+ * `defaultDictionaryPath.browser.mjs` (built from `defaultDictionaryPath.browser.mts`) instead of this module.
  * Without such a bundler, a browser has no default path.
  */
 export const defaultDictionaryPath = (): string | undefined => {

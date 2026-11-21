@@ -31,13 +31,13 @@
     "fs": false,
     "path": false,
     "zlib": false,
-    "./lib/defaultDictionaryPath.js": "./src/defaultDictionaryPath.browser.mjs"
+    "./lib/defaultDictionaryPath.js": "./lib/defaultDictionaryPath.browser.mjs"
   },
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "build": "tsc -p .",
+    "build": "tsc -p . && tsc -p tsconfig.browser.json",
     "build:dict": "tsc -p scripts && node scripts-build/scripts/build-dict.js",
     "compare": "node benchmark/compare.js",
     "cp-public": "mkdir -p public/dict && cp node_modules/kuromoji/dict/*.dat.gz dict/kuromojin.dict public/dict/",

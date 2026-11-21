@@ -147,7 +147,7 @@ One word has one or more entries, and the entries have no other relation to each
 - `getTokenizerOption.dicPath?: string` is the dictionary path of a call.
 - The environment variable `KUROMOJIN_DIC_PATH` is read in Node.js.
 - `globalThis.kuromojin.dicPath` is read in every environment. In a page it is the same as `window.kuromojin.dicPath`.
-- The `browser` field of `package.json` replaces `lib/defaultDictionaryPath.js` with `src/defaultDictionaryPath.browser.mjs`, which gives the URL of `dict/kuromojin.dict` with `new URL(path, import.meta.url)`.
+- The `browser` field of `package.json` replaces `lib/defaultDictionaryPath.js` with `lib/defaultDictionaryPath.browser.mjs`, which is built as an ES module from `src/defaultDictionaryPath.browser.mts` and gives the URL of `dict/kuromojin.dict` with `new URL(path, import.meta.url)`.
 - A dictionary path that ends with `.dict` is the file of a dictionary in the format of kuromojin.
 - Any other dictionary path is a directory or a URL with the twelve files of kuromoji.js.
 - The npm package publishes the `dict` directory with the dictionary of the package, `kuromojin.dict`.

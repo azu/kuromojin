@@ -147,7 +147,7 @@ flowchart TD
 - `getTokenizerOption.dicPath?: string` は、呼び出しの辞書のパスである。
 - 環境変数 `KUROMOJIN_DIC_PATH` は Node.js で読む。
 - `globalThis.kuromojin.dicPath` はどの環境でも読む。ページでは `window.kuromojin.dicPath` と同じである。
-- `package.json` の `browser` フィールドは、`lib/defaultDictionaryPath.js` を `src/defaultDictionaryPath.browser.mjs` に置き換える。このモジュールは `new URL(path, import.meta.url)` で `dict/kuromojin.dict` の URL を返す。
+- `package.json` の `browser` フィールドは、`lib/defaultDictionaryPath.js` を `lib/defaultDictionaryPath.browser.mjs` に置き換える。このファイルは `src/defaultDictionaryPath.browser.mts` から ES モジュールとしてビルドする。このモジュールは `new URL(path, import.meta.url)` で `dict/kuromojin.dict` の URL を返す。
 - `.dict` で終わる辞書のパスは、kuromojin の形式の辞書のファイルである。
 - それ以外の辞書のパスは、kuromoji.js の 12 個のファイルを持つディレクトリまたは URL である。
 - npm パッケージは、パッケージの辞書 `kuromojin.dict` を持つ `dict` ディレクトリを公開する。
