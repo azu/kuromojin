@@ -1,4 +1,0 @@
-allowBuilds:
-  # esbuild comes with webpack and vite. Its binary comes from its optional dependency,
-  # so its install script is not needed
-  esbuild: false
