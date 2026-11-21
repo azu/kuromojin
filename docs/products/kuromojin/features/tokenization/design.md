@@ -95,7 +95,7 @@ When they are not, it calls `tokenizeForSentence(text)` of the tokenizer of that
 With `noCacheTokenize: true`, it calls `tokenizeForSentence(text)` and returns the result without reading or writing the map.
 
 The key of the map is the text as the caller passes it, so a lookup creates no string.
-The map keeps the 10,000 most recently used texts and removes the least recently used one, with its tokens of all versions, when it is full.
+The map keeps the 1,000 most recently used texts and removes the least recently used one, with its tokens of all versions, when it is full.
 It is a variable of the module, so each installed copy of kuromojin has its own map, and all callers of one copy share it.
 The stored arrays are not copied or frozen. The read-only type of the result is what keeps callers from changing them.
 
@@ -176,9 +176,14 @@ It was not chosen, because its tokens differ from the reference result, and ever
 `tokenize` could split the text at `、` and `。` and analyze each piece, as `tokenize` of the tokenizer does.
 It was not chosen, because the forced split at `。` gave wrong results.
 
+### Remember more texts
+
+The map could keep ten times as many texts.
+It was not chosen, because most repeated calls for a text come right after each other, from the rules that look at the same sentence. More texts add few hits, and the map holds their tokens in memory until the process ends.
+
 ### Other decisions
 
-There is no record of alternatives for the size of the cache or for the choice of `lru_map`, and the reasons for them are unknown.
+There is no record of alternatives for the choice of `lru_map`, and the reason for it is unknown.
 
 ## Open questions
 

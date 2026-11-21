@@ -157,7 +157,7 @@ let loading: Promise<LoadedDictionary> | null = null;
 type RememberedTokens = { version: string; tokens: KuromojiToken[]; other: RememberedTokens | undefined };
 // cache for tokenize: text -> tokens of each version.
 // The key is the text as the caller passes it, so a lookup creates no string.
-const tokenizeCacheMap = new LRUMap<string, RememberedTokens>(10000);
+const tokenizeCacheMap = new LRUMap<string, RememberedTokens>(1000);
 
 const load = (options?: getTokenizerOption): Promise<LoadedDictionary> => {
     if (loading === null) {

@@ -93,6 +93,15 @@ describe("tokenize", function () {
             assert.deepStrictEqual(first, second);
             assert.strictEqual(await tokenize("キャッシュを使わない解析"), first);
         });
+        it("remembers the tokens of the 1,000 most recently used texts", async function () {
+            const first = await tokenize("最初のテキスト");
+            for (let i = 0; i < 999; i++) await tokenize(`${i}番目のテキスト`);
+            assert.strictEqual(await tokenize("最初のテキスト"), first);
+            for (let i = 0; i < 1000; i++) await tokenize(`${i}番目の別のテキスト`);
+            const again = await tokenize("最初のテキスト");
+            assert.notStrictEqual(again, first);
+            assert.deepStrictEqual(again, first);
+        });
     });
 });
 

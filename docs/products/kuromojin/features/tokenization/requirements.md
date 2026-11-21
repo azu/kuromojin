@@ -192,7 +192,7 @@ So every string has tokens, and no text makes `tokenize` reject.
 
 ##### Reuse of tokens
 
-`tokenize` remembers the tokens of the 10,000 most recently used texts.
+`tokenize` remembers the tokens of the 1,000 most recently used texts.
 The key is the text and the dictionary version of the call, and the remembered tokens are used whatever `dicPath` is.
 The returned array and its tokens are shared by all callers, so a caller must not change them. The type of the result is read-only for this reason.
 
@@ -226,7 +226,7 @@ None. The tokenizer exists only after the dictionary is loaded, and its function
 
 ### Required data
 
-- **Text:** The string to analyze. `tokenize` keeps it in memory as the key of the remembered tokens until the process ends or 10,000 newer texts replace it. It is not written to a file and not sent anywhere.
+- **Text:** The string to analyze. `tokenize` keeps it in memory as the key of the remembered tokens until the process ends or 1,000 newer texts replace it. It is not written to a file and not sent anywhere.
 - **Tokens:** The result of the analysis. They are kept in memory together with the text.
 - **Dictionary:** The data that the analysis uses. See [Dictionary](../dictionary/requirements.md).
 
