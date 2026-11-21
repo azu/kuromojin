@@ -228,7 +228,7 @@ The tokenizer has two synchronous functions that take a text and return an array
 The tokenizer has no other public member.
 
 - `tokenizeForSentence(text)` analyzes the whole text as one piece. It shares the remembered tokens with `tokenize` of kuromojin, so a text that either one has analyzed is not analyzed again by the other.
-- `tokenize(text)` splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces in order. Its tokens differ from the ones of the whole text, so it remembers them apart from `tokenizeForSentence`, for the 1,000 most recently used texts too.
+- `tokenize(text)` is deprecated: it exists for code that was written for `tokenize` of the tokenizer of kuromoji.js, and its type tells an editor that it is deprecated. It splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces in order. Its tokens differ from the ones of the whole text, so it remembers them apart from `tokenizeForSentence`, for the 1,000 most recently used texts too.
 
 Both functions return the remembered array for a text and a dictionary version, as `tokenize` of kuromojin does, and the type of the result is read-only.
 With `noCacheTokenize: true`, the functions analyze every text again, return a new array, and do not read or change the remembered tokens.

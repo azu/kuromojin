@@ -21,6 +21,8 @@ export type Tokenizer = {
     /**
      * Split the text after each `、` and `。`, analyze each piece, and return the tokens of all pieces.
      * The tokens of a text are remembered, and a call with the same text returns the same array.
+     * @deprecated Use `tokenizeForSentence(text)`, or `tokenize(text)` of kuromojin. They analyze the whole text as one piece.
+     * This function gives different tokens for some texts, and it exists for code that was written for `tokenize` of kuromoji.js.
      */
     tokenize: (text: string) => Readonly<Readonly<KuromojiToken>[]>;
     /**
