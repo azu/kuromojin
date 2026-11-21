@@ -70,7 +70,8 @@ const prepareBase = (ref, cacheDir) => {
         fs.writeFileSync(marker, commit);
     }
     checkBuilt(dir, "The base");
-    return { name: "base", root: dir, ref, commit, dirty: false };
+    // CI passes the commit itself as the base: a ref that is the commit says nothing more
+    return { name: "base", root: dir, ref: ref === commit ? null : ref, commit, dirty: false };
 };
 
 module.exports = { defaultBase, prepareHead, prepareBase };
