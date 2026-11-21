@@ -208,18 +208,18 @@ const tokenizer = await getTokenizer({ dicPath: dictionaryUrl });
 ```
 
 Without a bundler, give the URL of the file on a CDN that serves the files of npm packages, such as [jsDelivr](https://www.jsdelivr.com/).
-Write the exact version of kuromojin in the URL. The file of a version never changes, so the tokens do not change until you change the URL.
+Replace `<version>` with the exact version of kuromojin that your page uses, 3.1.0 or later. The file of a version never changes, so the tokens do not change until you change the URL.
 
 ```js
 import { getTokenizer } from "kuromojin";
 
 const tokenizer = await getTokenizer({
-    dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@3.1.0/dict/kuromojin.dict"
+    dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict"
 });
 ```
 
-- `https://cdn.jsdelivr.net/npm/kuromojin@3.1.0/dict/kuromojin.dict`
-    - the dictionary of kuromojin 3.1.0. The dictionary is in the package since 3.1.0
+- `https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict`
+    - the dictionary of that version of kuromojin. The dictionary is in the package since 3.1.0
 - `https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict`
     - the dictionary of kuromoji.js 0.1.2
     - example: https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/base.dat.gz
@@ -230,7 +230,7 @@ const tokenizer = await getTokenizer({
 import { getTokenizer } from "kuromojin";
 // Affects all modules that use kuromojin.
 globalThis.kuromojin = {
-    dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@3.1.0/dict/kuromojin.dict"
+    dicPath: "https://cdn.jsdelivr.net/npm/kuromojin@<version>/dict/kuromojin.dict"
 };
 // this `getTokenizer` loads the dictionary of `globalThis.kuromojin.dicPath`
 getTokenizer();
