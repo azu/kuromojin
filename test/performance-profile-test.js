@@ -1,18 +1,17 @@
 // LICENSE : MIT
 // The scripts of the profile are JavaScript that Node.js runs as it is, so that they measure any commit.
 // This test is JavaScript too, because the scripts have no types.
-"use strict";
-const assert = require("node:assert");
-const { after, before, describe, it } = require("node:test");
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
-const { spawnSync } = require("node:child_process");
-const { compareValues, createResult, renderMarkdown } = require("../benchmark/lib/report");
-const { checkSetNames, createTexts } = require("../benchmark/lib/sets");
-const { summarizeCpuProfile } = require("../benchmark/lib/cpuprofile");
-const { listDependencies } = require("../benchmark/lib/size");
-const { firstDifference } = require("../benchmark/lib/measure");
+import assert from "node:assert";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterAll, beforeAll, describe, it } from "vitest";
+import { summarizeCpuProfile } from "../benchmark/lib/cpuprofile";
+import { firstDifference } from "../benchmark/lib/measure";
+import { compareValues, createResult, renderMarkdown } from "../benchmark/lib/report";
+import { checkSetNames, createTexts } from "../benchmark/lib/sets";
+import { listDependencies } from "../benchmark/lib/size";
 
 const TIME = { range: { worse: 1.1, better: 0.91 }, minDifference: 1 };
 const machine = { node: "v22.0.0", platform: "linux x64", cpus: 4 };
@@ -252,7 +251,7 @@ describe("performance profile", function () {
     });
 
     describe("measurements of a build", function () {
-        // The measurements run the source of the working tree as a build: test-build/src/, which `pnpm test` compiles
+        // The measurements run the build of the working tree: lib/, which `pnpm test` builds
         const texts = createTexts([{ path: "a.md", text: "吾輩は猫である。\n名前はまだ無い。\n𩸽𩸽を食べた\n" }]);
         let directory;
         let setFile;
@@ -263,7 +262,7 @@ describe("performance profile", function () {
                     "--expose-gc",
                     path.join(__dirname, "../benchmark/worker.js"),
                     measurement,
-                    path.join(__dirname, "../test-build/src"),
+                    path.join(__dirname, "../lib"),
                     setFile,
                     ...(argument === undefined ? [] : [argument])
                 ],
@@ -275,12 +274,12 @@ describe("performance profile", function () {
             assert.strictEqual(result.status, 0, result.stderr);
             return JSON.parse(result.stdout);
         };
-        before(function () {
+        beforeAll(function () {
             directory = fs.mkdtempSync(path.join(os.tmpdir(), "kuromojin-profile-test-"));
             setFile = path.join(directory, "set.json");
             fs.writeFileSync(setFile, JSON.stringify(texts));
         });
-        after(function () {
+        afterAll(function () {
             fs.rmSync(directory, { recursive: true, force: true });
         });
 

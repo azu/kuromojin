@@ -1,7 +1,7 @@
 /dist
 /lib
-# the compiled tests, scripts, and source of "pnpm test"
-/test-build
+# the compiled scripts of "pnpm run build:dict"
+/scripts-build
 # the output of "pnpm run profile" and "pnpm run compare"
 /profile-result
 /public/dict

@@ -22,7 +22,7 @@ import {
 
 /** The date of the IPADIC data of kuromoji.js 0.1.2: mecab-ipadic-2.7.0-20070801 */
 const BASE_VERSION = "2007-08-01";
-// `pnpm run build:dict` runs this script from test-build/scripts/
+// `pnpm run build:dict` runs this script from scripts-build/scripts/
 const root = path.join(__dirname, "..", "..");
 const kuromojiDirectory = path.join(path.dirname(require.resolve("kuromoji/package.json")), "dict");
 const dictionaryFile = path.join(root, "dict", "kuromojin.dict");

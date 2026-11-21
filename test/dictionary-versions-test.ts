@@ -1,6 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
-import { before, beforeEach, describe, it } from "node:test";
+import { beforeAll, beforeEach, describe, it } from "vitest";
 import type { DictionaryVersion, getTokenizerOption, KuromojiToken } from "../src";
 import {
     BASE_VERSION,
@@ -24,12 +24,12 @@ const version = (date: string) => date as DictionaryVersion;
 describe("dictionary versions", function () {
     /** the dictionary for tests: 2027-04-01 adds 令和, 2027-10-01 adds スマホ */
     let dicPath: string;
-    let kuromojin: ReturnType<typeof freshKuromojin>;
-    before(function () {
+    let kuromojin: Awaited<ReturnType<typeof freshKuromojin>>;
+    beforeAll(function () {
         dicPath = writeTestDictionary("versions.dict", testVersions);
     });
-    beforeEach(function () {
-        kuromojin = freshKuromojin();
+    beforeEach(async function () {
+        kuromojin = await freshKuromojin();
     });
     const withTestDictionary = <T>(callback: () => Promise<T>) => withSettings({ env: dicPath }, callback);
 
@@ -91,8 +91,8 @@ describe("dictionary versions", function () {
         it("does not change the tokens of an older version when the dictionary gets a newer version", async function () {
             const text = "令和にスマホを使う。令和元年は平成31年である。";
             const older = writeTestDictionary("older.dict", testVersions.slice(0, 1));
-            const before = await withSettings({ env: older }, () =>
-                freshKuromojin().tokenize(text, { dictionaryVersion: version("2027-04-01") })
+            const before = await withSettings({ env: older }, async () =>
+                (await freshKuromojin()).tokenize(text, { dictionaryVersion: version("2027-04-01") })
             );
             const after = await withTestDictionary(() =>
                 kuromojin.tokenize(text, { dictionaryVersion: version("2027-04-01") })
@@ -252,7 +252,7 @@ describe("dictionary versions", function () {
                 { date: "2028-04-01", added: [], removed: [392126] }
             ]);
             await withSettings({ env: file }, async () => {
-                const fresh = freshKuromojin();
+                const fresh = await freshKuromojin();
                 const removed = await fresh.tokenize("仕様について書く", { dictionaryVersion: version("2027-04-01") });
                 assert.deepStrictEqual(surfaces(removed), ["仕様", "に", "つい", "て", "書く"]);
                 // a changed word is a removed entry and an added entry
@@ -278,7 +278,7 @@ describe("dictionary versions", function () {
                 }
             ]);
             await withSettings({ env: file }, async () => {
-                const fresh = freshKuromojin();
+                const fresh = await freshKuromojin();
                 const [same] = await fresh.tokenize("黒文字", { dictionaryVersion: version("2027-04-01") });
                 assert.strictEqual(same.reading, "クロモジ");
                 const [cheaper] = await fresh.tokenize("黒文字", { dictionaryVersion: version("2027-10-01") });
@@ -292,7 +292,7 @@ describe("dictionary versions", function () {
                 { date: "2027-04-01", added: [], removed: entries.map((entry) => entry.number) }
             ]);
             await withSettings({ env: file }, async () => {
-                const fresh = freshKuromojin();
+                const fresh = await freshKuromojin();
                 const [base] = await fresh.tokenize("鱚");
                 assert.strictEqual(base.word_type, "KNOWN");
                 const tokens = await fresh.tokenize("鱚", { dictionaryVersion: version("2027-04-01") });
@@ -310,7 +310,7 @@ describe("dictionary versions", function () {
                 }
             ]);
             await withSettings({ env: file }, async () => {
-                const fresh = freshKuromojin();
+                const fresh = await freshKuromojin();
                 const tokens = await fresh.tokenize("🍣を食べる", { dictionaryVersion: version("2027-04-01") });
                 assert.deepStrictEqual(surfaces(tokens), ["🍣", "を", "食べる"]);
                 assert.strictEqual(tokens[0].word_type, "KNOWN");

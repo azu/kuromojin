@@ -1,7 +1,7 @@
 // LICENSE : MIT
 "use strict";
 import assert from "node:assert";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 // it is compatible check for <= 1.1.0
 import { getTokenizer, tokenize } from "../src";
 

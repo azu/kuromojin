@@ -1,14 +1,9 @@
 {
     "extends": "../tsconfig.json",
     "compilerOptions": {
-        // `pnpm test` and `pnpm run build:dict` run the compiled tests, scripts, and source from test-build/
         "rootDir": "..",
-        "outDir": "../test-build",
-        "declaration": false
+        "declaration": false,
+        "noEmit": true
     },
-    "include": [
-        "../src/**/*",
-        "../scripts/**/*",
-        "./**/*.ts"
-    ]
+    "include": ["../src/**/*", "./**/*"]
 }

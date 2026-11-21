@@ -37,8 +37,7 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "build:dict": "pnpm run build:test && node test-build/scripts/build-dict.js",
-    "build:test": "tsc -p test && node test/link-dictionary.js",
+    "build:dict": "tsc -p scripts && node scripts-build/scripts/build-dict.js",
     "compare": "node benchmark/compare.js",
     "cp-public": "mkdir -p public/dict && cp node_modules/kuromoji/dict/*.dat.gz dict/kuromojin.dict public/dict/",
     "dev": "npm run cp-public && vite",
@@ -48,7 +47,7 @@
     "prepublish": "npm run --if-present build",
     "preview": "npm run cp-public && vite preview",
     "profile": "node benchmark/profile.js",
-    "test": "pnpm run build:test && node --test \"test-build/test/*-test.js\" \"test/*-test.js\"",
+    "test": "tsc -p test && pnpm run build && vitest run",
     "watch": "tsc -p . --watch",
     "web:build": "npm run cp-public && vite build"
   },
@@ -58,7 +57,8 @@
     "lint-staged": "^17.6.1",
     "prettier": "^3.10.1",
     "typescript": "^7.0.2",
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
   },
   "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0",
   "email": "azuciao@gmail.com",

@@ -1,6 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
-import { before, describe, it } from "node:test";
+import { beforeAll, describe, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { Analyzer, splitByPunctuation } from "../src/analyzer/Analyzer";
@@ -12,8 +12,7 @@ import {
     baseWordsAtEvery,
     kuromojiDictionaryDirectory,
     packageDictionaryFile,
-    writeTestDictionary,
-    root
+    writeTestDictionary
 } from "./helpers";
 
 // kuromoji.js has no type definitions
@@ -35,7 +34,7 @@ const documentLines = (): string[] => {
             }
         }
     };
-    walk(path.join(root, "docs", "products"));
+    walk(path.join(__dirname, "..", "docs", "products"));
     return [...lines];
 };
 
@@ -66,7 +65,7 @@ const STEP = 20;
 describe("reference result", function () {
     let reference: Reference;
     const lines = documentLines();
-    before(async function () {
+    beforeAll(async function () {
         reference = await new Promise<Reference>((resolve, reject) => {
             kuromoji
                 .builder({ dicPath: kuromojiDictionaryDirectory })
@@ -103,7 +102,7 @@ describe("reference result", function () {
         describe(`with ${name}`, function () {
             let analyzer: Analyzer;
             let view: DictionaryView;
-            before(async function () {
+            beforeAll(async function () {
                 const dictionary = await loadDictionary(dictionaryPath());
                 analyzer = new Analyzer(dictionary);
                 view = createDefaultView(dictionary);
