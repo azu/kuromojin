@@ -11,13 +11,13 @@
     "tokenizer",
     "textlint"
   ],
-  "homepage": "https://github.com/azu/kuromojin",
+  "homepage": "https://github.com/textlint/kuromojin",
   "bugs": {
-    "url": "https://github.com/azu/kuromojin/issues"
+    "url": "https://github.com/textlint/kuromojin/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/azu/kuromojin.git"
+    "url": "git+https://github.com/textlint/kuromojin.git"
   },
   "license": "MIT AND Apache-2.0",
   "main": "lib/index.js",

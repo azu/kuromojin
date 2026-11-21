@@ -1,4 +1,4 @@
-# kuromojin [![Actions Status: test](https://github.com/azu/kuromojin/workflows/test/badge.svg)](https://github.com/azu/kuromojin/actions?query=workflow%3A"test")
+# kuromojin [![Actions Status: test](https://github.com/textlint/kuromojin/actions/workflows/test.yml/badge.svg)](https://github.com/textlint/kuromojin/actions/workflows/test.yml)
 
 Japanese morphological analyzer for JavaScript, used mainly by [textlint](https://github.com/textlint/textlint) rules.
 
@@ -324,7 +324,7 @@ kuromojin returns the tokens of kuromoji.js 0.1.2 for the same text and the same
 ### Why kuromojin has its own analyzer
 
 Up to 3.0, kuromojin was a wrapper of kuromoji.js. Since 3.1.0, it analyzes with its own analyzer and its own dictionary file, because the analysis was the largest cost of a textlint run with Japanese rules.
-The tokens stay the same, and these get smaller. The numbers are rough directions from the measurement of [#27](https://github.com/azu/kuromojin/pull/27), not promises.
+The tokens stay the same, and these get smaller. The numbers are rough directions from the measurement of [#27](https://github.com/textlint/kuromojin/pull/27), not promises.
 
 | | Compared with kuromojin 3.0 (kuromoji.js 0.1.2) |
 | --- | --- |

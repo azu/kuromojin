@@ -1,7 +1,7 @@
 // The result of a profile or a comparison: the ratios, the marks, and the Markdown
 "use strict";
 
-const REPOSITORY = "https://github.com/azu/kuromojin";
+const REPOSITORY = "https://github.com/textlint/kuromojin";
 
 // An item is marked when head / base is outside its range
 const TIME_RANGE = { worse: 1.1, better: 0.91 };
