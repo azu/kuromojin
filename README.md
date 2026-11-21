@@ -396,7 +396,7 @@ The words of the dictionary are the same.
     pnpm install
     pnpm test
 
-- `pnpm run test:e2e` packs kuromojin, builds pages with Vite, webpack, and esbuild, and checks the tokens in Chromium. It needs the Chromium of Playwright: `pnpm exec playwright install chromium`.
+- `pnpm run test:e2e` packs kuromojin, builds pages with Vite and webpack, and checks the tokens in Chromium. It needs the Chromium of Playwright: `pnpm exec playwright install chromium`.
 - `pnpm run build:dict` converts the dictionary of kuromoji.js 0.1.2 and the changes of `dict-source/versions.csv` into `dict/kuromojin.dict`.
 - `pnpm run profile` measures the working tree on fixed sets of texts: the load of the dictionary, the analysis, the memory, the allocation, the installed size, and the functions with the most CPU time. `pnpm run compare` measures `master` too and prints each number with its ratio and the texts whose tokens differ. CI runs the comparison for each pull request and puts it in the job summary.
 - The specifications are in [docs/products/kuromojin](docs/products/kuromojin/product.md).

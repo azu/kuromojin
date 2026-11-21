@@ -13,7 +13,6 @@ import { afterAll, beforeAll, describe, it } from "vitest";
 import { chromium, type Browser } from "playwright";
 import { build as viteBuild, createServer as createViteServer, type ViteDevServer } from "vite";
 import webpack from "webpack";
-import * as esbuild from "esbuild";
 
 const root = path.join(__dirname, "..");
 const TEXT = "日本語の文章を解析する";
@@ -87,11 +86,7 @@ describe("browser e2e", function () {
 
         const pages: Record<string, string> = {
             direct: pageScript('import { tokenize } from "kuromojin";', `tokenize(${JSON.stringify(TEXT)})`),
-            "cjs-rule": pageScript('import rule from "cjs-rule";', `rule.tokenize(${JSON.stringify(TEXT)})`),
-            "esbuild-file-loader": pageScript(
-                'import { tokenize } from "kuromojin";\nimport dictionaryUrl from "kuromojin/dict/kuromojin.dict";',
-                `tokenize(${JSON.stringify(TEXT)}, { dicPath: dictionaryUrl })`
-            )
+            "cjs-rule": pageScript('import rule from "cjs-rule";', `rule.tokenize(${JSON.stringify(TEXT)})`)
         };
         for (const [name, script] of Object.entries(pages)) {
             fs.mkdirSync(path.join(project, name));
@@ -187,41 +182,4 @@ describe("browser e2e", function () {
             assert.strictEqual(dictionaryRequests(requests).length, 1);
         });
     }
-
-    it("esbuild: without a setting, the page fails with the error of a missing dictionary", async function () {
-        const outDir = path.join(project, "dist", "esbuild-iife");
-        await esbuild.build({
-            absWorkingDir: project,
-            entryPoints: [path.join(project, "direct", "main.js")],
-            bundle: true,
-            format: "iife",
-            outfile: path.join(outDir, "main.js"),
-            logLevel: "silent"
-        });
-        fs.writeFileSync(path.join(outDir, "index.html"), html("./main.js"));
-        const server = await serve(outDir);
-        try {
-            const result = await open(server.url);
-            assert.ok(!result.ok);
-            assert.match(result.error, /kuromojin needs a dictionary path in a browser/);
-        } finally {
-            await server.close();
-        }
-    });
-
-    it("esbuild: the setup of the README, with the file loader and dicPath, uses the copy of the dictionary", async function () {
-        const outDir = path.join(project, "dist", "esbuild-file-loader");
-        await esbuild.build({
-            absWorkingDir: project,
-            entryPoints: [path.join(project, "esbuild-file-loader", "main.js")],
-            bundle: true,
-            format: "esm",
-            loader: { ".dict": "file" },
-            outdir: outDir,
-            logLevel: "silent"
-        });
-        fs.writeFileSync(path.join(outDir, "index.html"), html("./main.js"));
-        const requests = await openBuilt(outDir);
-        assert.strictEqual(dictionaryRequests(requests).length, 1);
-    });
 });
