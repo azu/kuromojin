@@ -230,6 +230,8 @@ globalThis.kuromojin = {
 getTokenizer();
 ```
 
+For compatibility, a URL of the `dict` directory of kuromoji.js also works as the dictionary path, as described under [Dictionary](#dictionary). The dictionary of kuromojin gives the same tokens with a smaller download.
+
 :memo: `https://kuromojin.netlify.app/dict/kuromojin.dict` and `https://kuromojin.netlify.app/dict` still work for the pages that already load them.
 Do not use them in a new page: the website of kuromojin is not a CDN, and its dictionary changes when the website is built from a newer kuromojin.
 
