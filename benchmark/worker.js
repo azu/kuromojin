@@ -4,6 +4,8 @@
 // Usage: node --expose-gc worker.js <measurement> <root of the build> <file of the set> [argument]
 //
 // It uses only `getTokenizer` and `tokenize` of the build, so it measures any commit of kuromojin.
+// The analysis is measured with `getTokenizer({ noCacheTokenize: true })`, which analyzes every text again.
+// A build whose tokenizer does not remember tokens ignores the option.
 "use strict";
 const fs = require("node:fs");
 const crypto = require("node:crypto");
@@ -18,6 +20,8 @@ const MIN_PASSES = 3;
 const MAX_PASSES = 50;
 const MIN_TOTAL_MS = 500;
 const MAX_TOTAL_MS = 10000;
+/** The option of `getTokenizer` for a tokenizer that analyzes every text again */
+const ANALYZE_EVERY_TEXT = { noCacheTokenize: true };
 // The number of remembered texts is less than any limit of the remembered tokens
 const REMEMBERED_TEXTS = 100;
 const REMEMBERED_CALLS = 200000;
@@ -81,7 +85,7 @@ const measurements = {
 
     /** The digest of the tokens of every line and of every file */
     async digest(set) {
-        const tokenizer = await require(root).getTokenizer();
+        const tokenizer = await require(root).getTokenizer(ANALYZE_EVERY_TEXT);
         let tokens = 0;
         const digestOf = (text) => {
             const result = tokenizer.tokenizeForSentence(text);
@@ -96,7 +100,7 @@ const measurements = {
 
     /** The tokens of the lines and the files that the argument selects: [{ kind, index }] */
     async tokens(set) {
-        const tokenizer = await require(root).getTokenizer();
+        const tokenizer = await require(root).getTokenizer(ANALYZE_EVERY_TEXT);
         return JSON.parse(argument).map(({ kind, index }) => {
             const text = kind === "line" ? set.lines[index] : set.files[index].text;
             return tokenizer.tokenizeForSentence(text).map((token) => Object.fromEntries(normalizeToken(token)));
@@ -106,7 +110,7 @@ const measurements = {
     /** The times of the analysis and of `tokenize` of a remembered text, and the memory after them */
     async time(set) {
         const kuromojin = require(root);
-        const tokenizer = await kuromojin.getTokenizer();
+        const tokenizer = await kuromojin.getTokenizer(ANALYZE_EVERY_TEXT);
         const linesMs = timePasses(() => {
             for (let i = 0; i < set.lines.length; i++) tokenizer.tokenizeForSentence(set.lines[i]);
         });
@@ -128,7 +132,7 @@ const measurements = {
 
     /** The bytes that the analysis of every line allocates, and its garbage collections. All numbers are for one pass. */
     async allocation(set) {
-        const tokenizer = await require(root).getTokenizer();
+        const tokenizer = await require(root).getTokenizer(ANALYZE_EVERY_TEXT);
         const pass = () => {
             for (let i = 0; i < set.lines.length; i++) tokenizer.tokenizeForSentence(set.lines[i]);
         };
@@ -175,7 +179,7 @@ const measurements = {
     /** The load and the analysis, for a CPU profile of the process. The argument is the number of passes. */
     async cpu(set) {
         const passes = JSON.parse(argument);
-        const tokenizer = await require(root).getTokenizer();
+        const tokenizer = await require(root).getTokenizer(ANALYZE_EVERY_TEXT);
         for (let pass = 0; pass < passes.lines; pass++) {
             for (let i = 0; i < set.lines.length; i++) tokenizer.tokenizeForSentence(set.lines[i]);
         }

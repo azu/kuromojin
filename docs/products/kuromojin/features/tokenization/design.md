@@ -99,14 +99,21 @@ The map keeps the 1,000 most recently used texts and removes the least recently 
 It is a variable of the module, so each installed copy of kuromojin has its own map, and all callers of one copy share it.
 The stored arrays are not copied or frozen. The read-only type of the result is what keeps callers from changing them.
 
+`getTokenizer(options)` resolves with a tokenizer that puts the same lookup in front of the analysis.
+Its `tokenizeForSentence(text)` uses the map of `tokenize`, so the two share the tokens of a text.
+Its `tokenize(text)` uses a second map of the same kind, because the tokens of the pieces differ from the tokens of the whole text.
+The second map also keeps 1,000 texts.
+Each dictionary version has one such tokenizer.
+With `noCacheTokenize: true`, `getTokenizer` resolves with the tokenizer of the version that analyzes every text and does not use the maps.
+
 ## Architecture and sequence diagrams
 
-No diagram is needed. An analysis is one pass over the text followed by one walk back along the chosen split, and `tokenize` adds one lookup in a map in front of it.
+No diagram is needed. An analysis is one pass over the text followed by one walk back along the chosen split, and `tokenize` and the tokenizer add one lookup in a map in front of it.
 
 ## Data model and ER diagrams
 
 The token is the object described in the [fields of a token](requirements.md#fields-of-a-token).
-The cache is one map whose key is the text, and whose value is the arrays of tokens of the text, one for each dictionary version that the text was analyzed with.
+The cache is two maps whose key is the text, and whose value is the arrays of tokens of the text, one for each dictionary version that the text was analyzed with. One map has the tokens of the whole text, and the other has the tokens of the pieces of `tokenize` of the tokenizer.
 The table of candidates lives only during one analysis and is described under [Memory of one analysis](#memory-of-one-analysis).
 
 ## APIs and interfaces
@@ -116,7 +123,7 @@ kuromojin exports two functions and four types.
 - `tokenize(text: string, options?: getTokenizerOption): Promise<Readonly<Readonly<KuromojiToken>[]>>`
 - `getTokenizer(options?: getTokenizerOption): Promise<Tokenizer>`
 - `KuromojiToken` is the type of a token. It declares `reading` and `pronunciation` as `string`, although a token of an unknown word does not have them.
-- `Tokenizer` has `tokenize(text: string): KuromojiToken[]` and `tokenizeForSentence(text: string): KuromojiToken[]`.
+- `Tokenizer` has `tokenize(text: string): Readonly<Readonly<KuromojiToken>[]>` and `tokenizeForSentence(text: string): Readonly<Readonly<KuromojiToken>[]>`.
 - `getTokenizerOption` has the optional `dicPath?: string`, `dictionaryVersion?: DictionaryVersion`, and `noCacheTokenize?: boolean`.
 - `DictionaryVersion` is the type of the value of `dictionaryVersion`. It is the union of the dates of the versions of the dictionary of the package.
 

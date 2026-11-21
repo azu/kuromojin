@@ -29,6 +29,7 @@ Two commands start them: `yarn run profile` measures the working tree, and `yarn
 
 A build is a directory with a built package: the working tree, or a checkout of the base.
 A measurement loads the package of that directory as a caller does, and uses only `getTokenizer`, `tokenize`, and the two functions of the tokenizer.
+The analysis is measured with the tokenizer of `getTokenizer({ noCacheTokenize: true })`, which analyzes every text again. A build whose tokenizer does not reuse tokens ignores the option.
 The scripts of the head measure both builds, so the base does not need to have the scripts.
 The package gets no code for the profile, so the profile costs nothing in the run of a caller.
 

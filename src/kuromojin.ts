@@ -20,12 +20,14 @@ export type { DictionaryVersion };
 export type Tokenizer = {
     /**
      * Split the text after each `、` and `。`, analyze each piece, and return the tokens of all pieces.
+     * The tokens of a text are remembered, and a call with the same text returns the same array.
      */
-    tokenize: (text: string) => KuromojiToken[];
+    tokenize: (text: string) => Readonly<Readonly<KuromojiToken>[]>;
     /**
      * Analyze the whole text as one piece.
+     * The tokens of a text are shared with `tokenize` of kuromojin, and a call with the same text returns the same array.
      */
-    tokenizeForSentence: (text: string) => KuromojiToken[];
+    tokenizeForSentence: (text: string) => Readonly<Readonly<KuromojiToken>[]>;
 };
 
 export type getTokenizerOption = {
@@ -43,8 +45,11 @@ export type getTokenizerOption = {
      * Default: the default dictionary, which does not change within a major version of kuromojin.
      */
     dictionaryVersion?: DictionaryVersion;
-    // Cache by default
-    // Default: false
+    /**
+     * Turn off the reuse of tokens: `tokenize` analyzes the text again,
+     * and `getTokenizer` resolves with a tokenizer that analyzes every text again.
+     * Default: false
+     */
     noCacheTokenize?: boolean;
 };
 
@@ -87,21 +92,21 @@ const getDictionaryPath = (options?: getTokenizerOption): string => {
 /** The loaded dictionary and the tokenizers of its dictionary versions */
 class LoadedDictionary {
     private readonly analyzer: Analyzer;
-    /** date of a version -> tokenizer. The key of a dictionary without versions is "". */
+    /** date of a version -> tokenizer that analyzes every text. The key of a dictionary without versions is "". */
     private readonly tokenizers = new Map<string, Tokenizer>();
+    /** date of a version -> tokenizer that reuses the remembered tokens */
+    private readonly rememberingTokenizers = new Map<string, Tokenizer>();
     /** The dates of the versions of the dictionary */
     private readonly versionDates: ReadonlySet<unknown>;
     /** The date of the default version, or "" for a dictionary without versions */
     readonly defaultVersion: string;
-    readonly defaultTokenizer: Tokenizer;
 
     constructor(private readonly dictionary: Dictionary) {
         this.analyzer = new Analyzer(dictionary);
         this.versionDates = new Set((dictionary.versions ?? []).map((version) => version.date));
         // In this major version, the default version is the base dictionary
         this.defaultVersion = dictionary.versions !== null ? dictionary.versions[0].date : "";
-        this.defaultTokenizer = this.createTokenizer(createDefaultView(dictionary));
-        this.tokenizers.set(this.defaultVersion, this.defaultTokenizer);
+        this.tokenizers.set(this.defaultVersion, this.createTokenizer(createDefaultView(dictionary)));
     }
 
     private createTokenizer(view: DictionaryView): Tokenizer {
@@ -133,7 +138,27 @@ class LoadedDictionary {
     }
 
     /**
-     * The tokenizer of a version. `version` is a date that resolveVersion returned.
+     * The tokenizer of a version that reuses the remembered tokens. `version` is a date that resolveVersion returned.
+     */
+    rememberingTokenizerOf(version: string): Tokenizer {
+        let tokenizer = this.rememberingTokenizers.get(version);
+        if (tokenizer === undefined) {
+            const analyzing = this.tokenizerOf(version);
+            tokenizer = {
+                tokenize(text: string): Readonly<Readonly<KuromojiToken>[]> {
+                    return remember(splitTokenizeCacheMap, text, version, analyzing.tokenize);
+                },
+                tokenizeForSentence(text: string): Readonly<Readonly<KuromojiToken>[]> {
+                    return remember(tokenizeCacheMap, text, version, analyzing.tokenizeForSentence);
+                }
+            };
+            this.rememberingTokenizers.set(version, tokenizer);
+        }
+        return tokenizer;
+    }
+
+    /**
+     * The tokenizer of a version that analyzes every text. `version` is a date that resolveVersion returned.
      */
     tokenizerOf(version: string): Tokenizer {
         let tokenizer = this.tokenizers.get(version);
@@ -154,10 +179,35 @@ let loading: Promise<LoadedDictionary> | null = null;
  * The remembered tokens of a text for one dictionary version.
  * `other` has the tokens of the same text for another version. Most texts are analyzed with one version.
  */
-type RememberedTokens = { version: string; tokens: KuromojiToken[]; other: RememberedTokens | undefined };
-// cache for tokenize: text -> tokens of each version.
+type RememberedTokens = {
+    version: string;
+    tokens: Readonly<Readonly<KuromojiToken>[]>;
+    other: RememberedTokens | undefined;
+};
+// cache for tokenize and tokenizeForSentence of the tokenizer: text -> tokens of each version.
 // The key is the text as the caller passes it, so a lookup creates no string.
 const tokenizeCacheMap = new LRUMap<string, RememberedTokens>(1000);
+// cache for tokenize of the tokenizer, which splits the text at punctuation: text -> tokens of each version.
+const splitTokenizeCacheMap = new LRUMap<string, RememberedTokens>(1000);
+
+/**
+ * The remembered tokens of the text and the version, or the tokens of `analyze`, which are remembered.
+ * The tokens of one version are never returned for another one.
+ */
+const remember = (
+    cacheMap: LRUMap<string, RememberedTokens>,
+    text: string,
+    version: string,
+    analyze: (text: string) => Readonly<Readonly<KuromojiToken>[]>
+): Readonly<Readonly<KuromojiToken>[]> => {
+    const first = cacheMap.get(text);
+    for (let remembered = first; remembered !== undefined; remembered = remembered.other) {
+        if (remembered.version === version) return remembered.tokens;
+    }
+    const tokens = analyze(text);
+    cacheMap.set(text, { version, tokens, other: first });
+    return tokens;
+};
 
 const load = (options?: getTokenizerOption): Promise<LoadedDictionary> => {
     if (loading === null) {
@@ -172,28 +222,30 @@ const load = (options?: getTokenizerOption): Promise<LoadedDictionary> => {
     return loading;
 };
 
+const versionOf = (dictionary: LoadedDictionary, options?: getTokenizerOption): string =>
+    options === undefined || options.dictionaryVersion === undefined
+        ? dictionary.defaultVersion
+        : dictionary.resolveVersion(options.dictionaryVersion);
+
 const selectTokenizer = (dictionary: LoadedDictionary, options?: getTokenizerOption): Tokenizer => {
-    if (options === undefined || options.dictionaryVersion === undefined) return dictionary.defaultTokenizer;
-    return dictionary.tokenizerOf(dictionary.resolveVersion(options.dictionaryVersion));
+    const version = versionOf(dictionary, options);
+    if (options !== undefined && options.noCacheTokenize) {
+        return dictionary.tokenizerOf(version);
+    }
+    return dictionary.rememberingTokenizerOf(version);
 };
 
-const tokenizeWith = (dictionary: LoadedDictionary, text: string, options?: getTokenizerOption): KuromojiToken[] => {
-    const version =
-        options === undefined || options.dictionaryVersion === undefined
-            ? dictionary.defaultVersion
-            : dictionary.resolveVersion(options.dictionaryVersion);
+const tokenizeWith = (
+    dictionary: LoadedDictionary,
+    text: string,
+    options?: getTokenizerOption
+): Readonly<Readonly<KuromojiToken>[]> => {
+    const version = versionOf(dictionary, options);
     const tokenizer = dictionary.tokenizerOf(version);
     if (options !== undefined && options.noCacheTokenize) {
         return tokenizer.tokenizeForSentence(text);
     }
-    // the tokens of one version are never returned for another one
-    const first = tokenizeCacheMap.get(text);
-    for (let remembered = first; remembered !== undefined; remembered = remembered.other) {
-        if (remembered.version === version) return remembered.tokens;
-    }
-    const tokens = tokenizer.tokenizeForSentence(text);
-    tokenizeCacheMap.set(text, { version, tokens, other: first });
-    return tokens;
+    return remember(tokenizeCacheMap, text, version, tokenizer.tokenizeForSentence);
 };
 
 export function getTokenizer(options?: getTokenizerOption): Promise<Tokenizer> {

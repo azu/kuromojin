@@ -33,7 +33,9 @@ kuromojin exports two functions.
     - `tokenizer.tokenizeForSentence(text)` analyzes the whole text as one piece.
     - `tokenizer.tokenize(text)` splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces.
 
-The array and the objects that `tokenize()` returns are read-only, because the same array is returned for the same text.
+The array and the objects that `tokenize()` and the tokenizer return are read-only, because the same array is returned for the same text.
+`tokenizer.tokenizeForSentence(text)` shares the remembered tokens with `tokenize(text)`.
+`getTokenizer({ noCacheTokenize: true })` resolves with a tokenizer that analyzes every text again and returns a new array.
 
 ```js
 import { tokenize, getTokenizer } from "kuromojin";
@@ -68,7 +70,7 @@ tokenize(text).then((tokens) => {
 
 - `dicPath?: string`: the [dictionary path](#dictionary). It is used only by the call that starts loading the dictionary.
 - `dictionaryVersion?: DictionaryVersion`: the [dictionary version](#dictionary-versions) of the call, as a date written as `YYYY-MM-DD`. The type `DictionaryVersion` is the union of the dates of the versions.
-- `noCacheTokenize?: boolean`: `tokenize()` analyzes the text again and does not remember the tokens. Default: `false`
+- `noCacheTokenize?: boolean`: `tokenize()` analyzes the text again and does not remember the tokens, and `getTokenizer()` resolves with a tokenizer that analyzes every text again. Default: `false`
 
 ## Dictionary
 
