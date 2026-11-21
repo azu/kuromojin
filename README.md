@@ -245,6 +245,16 @@ import { tokenize } from "kuromojin";
 const tokens = await tokenize(text);
 ```
 
+[Next.js](https://nextjs.org/) with Turbopack works in the same way in the browser.
+On the server, for example in a Server Component, list kuromojin in [`serverExternalPackages`](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages), so that it is loaded from `node_modules` and finds the dictionary of the package:
+
+```js
+// next.config.js
+module.exports = {
+    serverExternalPackages: ["kuromojin"]
+};
+```
+
 The `browser` field of `package.json` gives a bundler this code. A bundler that does not read the field or does not support the expression, such as esbuild, needs the dictionary path.
 With esbuild, copy the dictionary with the [file loader](https://esbuild.github.io/content-types/#file) and give its URL. The URL has to keep the ending `.dict`.
 
