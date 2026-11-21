@@ -29,7 +29,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # the base commit is needed for its worktree
+          # the base branch is needed for the worktree of the base
           fetch-depth: 0
           persist-credentials: false
       - name: setup Node.js
@@ -40,10 +40,12 @@ jobs:
         run: yarn install --frozen-lockfile --ignore-scripts
       - name: Compare the base and the head
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # The tip of the base branch, which the checkout has merged the pull request into.
+          # The base commit of the event can be an older commit, or the one of a base branch that was changed.
+          BASE_REF: ${{ github.base_ref }}
         # The Markdown goes to the log too. `shell: bash` fails the step when the comparison fails before `tee`
         shell: bash
-        run: node benchmark/compare.js --base "$BASE_SHA" --out-dir profile-result | tee -a "$GITHUB_STEP_SUMMARY"
+        run: node benchmark/compare.js --base "origin/$BASE_REF" --out-dir profile-result | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload the result
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

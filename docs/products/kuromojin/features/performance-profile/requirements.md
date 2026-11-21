@@ -92,7 +92,7 @@ Scenario: When a pull request changes the source, CI puts the comparison in the 
 
 - Given: A pull request from a fork changes a file under `src/`.
 - When: CI runs for the pull request.
-- Then: The job summary has the Markdown output of the comparison of the base commit of the pull request and its head, and the run has the JSON output and the CPU profiles as an artifact. A difference does not fail the job.
+- Then: The job summary has the Markdown output of the comparison of the base branch of the pull request and its head, and the run has the JSON output and the CPU profiles as an artifact. A difference does not fail the job.
 
 Scenario: When the code of a pull request is malicious, it gets no secret and no write access
 
@@ -237,7 +237,7 @@ The comparison stops with a message that names the ref or the step that failed, 
 
 #### Applicable conditions
 
-The base is the base commit of the pull request, and the head is the pull request.
+The base is the newest commit of the base branch of the pull request, and the head is the pull request.
 The job uses every set.
 The job fails only when the comparison cannot finish. A difference between the builds does not fail it.
 The job runs the code of the pull request, so it has no secret and a token that can only read.
