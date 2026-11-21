@@ -1,5 +1,7 @@
 /dist
 /lib
+# the output of "yarn run profile" and "yarn run compare"
+/profile-result
 /public/dict
 ### https://raw.github.com/github/gitignore/608690d6b9a78c2a003affc792e49a84905b3118/Node.gitignore
 

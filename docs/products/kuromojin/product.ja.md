@@ -103,6 +103,7 @@ kuromoji.js は JavaScript で書かれた形態素解析器で、日本語向�
 | 辞書 | 辞書を見つけ、すべての呼び出し元のために一度だけ読み込む | [Requirements](features/dictionary/requirements.ja.md) |
 | 辞書のバージョン | 既定の辞書を変えずに、呼び出し元が日付でより新しい辞書を選べるようにする | [Requirements](features/dictionary-versions/requirements.ja.md) |
 | オンラインのプレイグラウンド | ブラウザで入力したテキストのトークンを表示し、試すための辞書のファイルを配信する | [Requirements](features/playground/requirements.ja.md) |
+| パフォーマンスのプロファイル | 決まったテキストのセットでビルドを計測し、プルリクエストのビルドを `master` のビルドと比較する | [Requirements](features/performance-profile/requirements.ja.md) |
 
 ## 成功の定義
 

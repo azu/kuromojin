@@ -47,11 +47,11 @@ So kuromojin knows the newest version, and can check a date that a caller names,
 The versions only grow. A release adds versions whose dates are later than every version of the file, and their entries get the numbers after all existing entries. It does not alter the existing versions.
 So the number of an entry, and with it the dictionary of a released version, is the same in every later release.
 
-### From a date to a version
+### Version of a call
 
-kuromojin first checks the value of `dictionaryVersion`: its form, that it is a date of the calendar, and that it is not earlier than the base dictionary and not later than the newest version.
-Then it replaces the date with the date of the newest version that is not later than it.
-Everything after this step uses that date only, so two dates that mean the same version share one view, one tokenizer, and the same remembered tokens.
+kuromojin looks the value of `dictionaryVersion` up in the set of the dates of the versions, which it makes when the dictionary is loaded.
+A value in the set is the version of the call. This step compares no dates.
+A value that is not in the set is an error, and only then kuromojin looks at the value to tell the reason: its form, and whether it is later than the newest version.
 
 A call without `dictionaryVersion` uses the default version of the major version, which is a constant in the code.
 
@@ -91,8 +91,8 @@ All tokenizers share the loaded dictionary and the memory of the analysis, becau
 ### Reuse of tokens
 
 `tokenize` keeps one map of remembered tokens for all versions.
-The key is the date of the version and the text together, so that the tokens of one version are never returned for another one.
-The limit of the map counts the entries of all versions together.
+The key is the text. Its value has the tokens of each version together with the date of the version, so that the tokens of one version are never returned for another one.
+The limit of the map counts texts, so a text that is analyzed with several versions is one entry.
 
 ### Errors
 
@@ -107,7 +107,7 @@ An added entry is written in the form of the IPADIC source files, so that a revi
 The script that builds the dictionary file reads this file.
 It checks that the ids exist in the costs between parts of speech and that a removed entry exists.
 It compares the digest of each version with the digest in the existing dictionary file, and it stops when a version of that file is changed or missing.
-It then builds the dictionary file with the entries of all versions, and it writes the list of versions for readers from the same lines.
+It then builds the dictionary file with the entries of all versions, and it writes the list of versions for readers and the type `DictionaryVersion` from the same lines.
 The list for readers is a Markdown file in the `dict` directory, next to the dictionary file, so it is published with the npm package.
 
 ## Architecture and sequence diagrams
@@ -119,10 +119,9 @@ flowchart TD
     call["tokenize or getTokenizer with dictionaryVersion"] --> load["Wait for the loaded dictionary"]
     load --> kind{"Is it a dictionary of kuromojin?"}
     kind -- No --> reject["Reject the Promise of this call"]
-    kind -- Yes --> check{"Is the value a date from the base dictionary to the newest version?"}
+    kind -- Yes --> check{"Is the value the date of a version of the dictionary?"}
     check -- No --> reject
-    check -- Yes --> version["Replace the date with the newest version not later than it"]
-    version --> view{"Does the view of the version exist?"}
+    check -- Yes --> view{"Does the view of the version exist?"}
     view -- No --> build["Build the view: the number of entries, and the entries of each word without the removed ones"]
     build --> analyze["Analyze with the dictionary and the view"]
     view -- Yes --> analyze
@@ -157,7 +156,8 @@ erDiagram
 
 ## APIs and interfaces
 
-- `getTokenizerOption.dictionaryVersion?: string` is the dictionary version of a call of `tokenize` or `getTokenizer`.
+- `getTokenizerOption.dictionaryVersion?: DictionaryVersion` is the dictionary version of a call of `tokenize` or `getTokenizer`.
+- `DictionaryVersion` is the type of the value: the union of the dates of the versions of the dictionary of the package. A call still checks the value, because a caller without types can pass any value and a dictionary from a dictionary path can have other versions.
 - The table of the dictionary file lists the versions: for each one, its date, its number of entries, the numbers of the entries that it removes, and the digest of its changes.
 - The npm package publishes the list of versions for readers in the `dict` directory.
 
@@ -215,6 +215,13 @@ It was not chosen, because the analysis with a version would collect its candida
 A date later than the newest version could mean the newest version.
 It was not chosen, because an installed kuromojin that is older than the rule expects would then analyze with an older dictionary without any error, and the tokens of the same date would change when kuromojin is updated.
 
+### Accept a date between two versions
+
+A date between the dates of two versions could mean the earlier one, so that a caller could write the date on which its code was written.
+It was not chosen, because a date with a mistake would then analyze with another dictionary than the caller expects, without any error.
+The type of the option has the dates of the versions, so a caller sees the versions where it writes the date.
+A call also needs no check of the calendar and no search for the version then.
+
 ### A name for the newest version
 
 A value such as `latest` could mean the newest version of the installed kuromojin.
@@ -223,7 +230,7 @@ It was not chosen, because the tokens of the caller would change with an update 
 ### Numbers instead of dates
 
 A version could be a number that counts up.
-It was not chosen, because a date tells the order of the versions and when a version was made, and it lets a date between two versions have a meaning.
+It was not chosen, because a date tells the order of the versions and when a version was made.
 
 ### Turn single changes on and off
 

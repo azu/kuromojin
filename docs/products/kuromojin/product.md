@@ -103,6 +103,7 @@ This matters even more in a browser, where the dictionary is downloaded.
 | Dictionary | Finds the dictionary and loads it once for all callers | [Requirements](features/dictionary/requirements.md) |
 | Dictionary versions | Lets a caller choose a newer dictionary by a date without changing the default one | [Requirements](features/dictionary-versions/requirements.md) |
 | Online playground | Shows the tokens of a text typed in a browser, and serves the dictionary files for trials | [Requirements](features/playground/requirements.md) |
+| Performance profile | Measures a build on fixed sets of texts, and compares the build of a pull request with the one of `master` | [Requirements](features/performance-profile/requirements.md) |
 
 ## Definition of success
 
