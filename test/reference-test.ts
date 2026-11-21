@@ -15,7 +15,6 @@ import {
 } from "./helpers";
 
 // kuromoji.js has no type definitions
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const kuromoji = require("kuromoji");
 type Reference = { tokenize(text: string): Token[]; tokenizeForSentence(text: string): Token[] };
 

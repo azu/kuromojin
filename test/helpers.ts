@@ -25,7 +25,6 @@ export function freshKuromojin(): typeof import("../src") {
     for (const file of Object.keys(require.cache)) {
         if (file.startsWith(sourceDirectory)) delete require.cache[file];
     }
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require("../src");
 }
 
@@ -111,6 +110,8 @@ export function baseWordsAtEvery(step: number): string[] {
 
 let builder: DictionaryBuilder | undefined;
 const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kuromojin-test-"));
+// the dictionary files for tests are several megabytes each, so they are removed when the tests end
+process.on("exit", () => fs.rmSync(temporaryDirectory, { recursive: true, force: true }));
 /**
  * Write a dictionary file of kuromojin with the given versions, and return its path.
  */

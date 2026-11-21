@@ -75,7 +75,6 @@ const getDictionaryPath = (options?: getTokenizerOption): string => {
     }
     if (isNode()) {
         // the dictionary of the package: lib/../dict/kuromojin.dict
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const path = require("path") as typeof import("path");
         return path.join(__dirname, "..", "dict", "kuromojin.dict");
     }

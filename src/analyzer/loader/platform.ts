@@ -21,9 +21,7 @@ export const isNode = (): boolean =>
 // also when the "browser" field has the name.
 // Node.js has DecompressionStream too, but its zlib module decompresses the dictionary several times faster.
 const nodePlatform = (): Platform => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fs = require("fs") as typeof import("fs");
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const zlib = require("zlib") as typeof import("zlib");
     return {
         read: (path) => fs.promises.readFile(path),
