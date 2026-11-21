@@ -266,6 +266,25 @@ describe("dictionary versions", function () {
                 assert.deepStrictEqual(await fresh.tokenize("仕様について書く"), base);
             });
         });
+        it("keeps the strings of an added entry that are not katakana", async function () {
+            const [entry] = baseEntriesOf("黒文字");
+            const added = {
+                ...entry,
+                surface_form: "黒文字\u{29e3d}",
+                basic_form: "くろもじ\u{29e3d}Ａ",
+                reading: "くろモジ\u{29e3d}",
+                pronunciation: "ｸﾛﾓｼﾞ\u31ff\u309f"
+            };
+            const file = writeTestDictionary("strings.dict", [{ date: "2027-04-01", added: [added], removed: [] }]);
+            await withSettings({ env: file }, async () => {
+                const fresh = await freshKuromojin();
+                const [token] = await fresh.tokenize("黒文字\u{29e3d}", { dictionaryVersion: version("2027-04-01") });
+                assert.strictEqual(token.surface_form, added.surface_form);
+                assert.strictEqual(token.basic_form, added.basic_form);
+                assert.strictEqual(token.reading, added.reading);
+                assert.strictEqual(token.pronunciation, added.pronunciation);
+            });
+        });
         it("adds an entry after the entries of the base dictionary for the same word", async function () {
             // an added entry with the same ids and cost as an entry of the base dictionary never wins against it
             const [entry] = baseEntriesOf("黒文字");

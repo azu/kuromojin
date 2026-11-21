@@ -10,6 +10,7 @@ import { createDefaultView } from "../src/analyzer/DictionaryVersions";
 import { loadDictionary } from "../src/analyzer/loader/loadDictionary";
 import { browserPlatform } from "../src/analyzer/loader/platform";
 import {
+    allBaseEntries,
     freshKuromojin,
     kuromojiDictionaryDirectory,
     packageDictionaryFile,
@@ -109,6 +110,45 @@ describe("dictionary", function () {
         it("loads a directory path that ends with a slash", async function () {
             const dictionary = await loadDictionary(kuromojiDictionaryDirectory + path.sep);
             assert.strictEqual(new Analyzer(dictionary).analyze("黒文字", [], createDefaultView(dictionary)).length, 1);
+        });
+    });
+
+    describe("dictionary of the package", function () {
+        it("has every entry of the dictionary of kuromoji.js with the same costs and features", async function () {
+            const dictionary = await loadDictionary(packageDictionaryFile);
+            const entries = allBaseEntries();
+            assert.strictEqual(dictionary.known.left.length, entries.length);
+            const matched = new Int32Array(512);
+            for (const expected of entries) {
+                const entry = expected.number;
+                const word = expected.surface_form;
+                const { word_id, word_type, word_position, ...features } = dictionary.knownFeatures.token(
+                    entry,
+                    1,
+                    word
+                );
+                const actual = {
+                    number: word_id / 10,
+                    ...features,
+                    left_id: dictionary.known.left[entry],
+                    right_id: dictionary.known.right[entry],
+                    word_cost: dictionary.known.cost[entry]
+                };
+                const same = (Object.keys(expected) as (keyof typeof expected)[]).every(
+                    (key) => actual[key] === expected[key]
+                );
+                if (!same || word_type !== "KNOWN" || word_position !== 1) assert.deepStrictEqual(actual, expected);
+                // the trie finds the word, and the entry is one of the entries of the word
+                const matches = dictionary.trie.commonPrefixMatches(word + "\u3042", 0, matched);
+                let found = false;
+                for (let i = 0; i < matches && !found; i++) {
+                    if (matched[i * 2 + 1] !== word.length) continue;
+                    const from = dictionary.wordOffsets[matched[i * 2]];
+                    const to = dictionary.wordOffsets[matched[i * 2] + 1];
+                    found = dictionary.wordEntries.subarray(from, to).includes(entry);
+                }
+                if (!found) assert.fail(`the entry ${entry} is not an entry of the word ${word}`);
+            }
         });
     });
 

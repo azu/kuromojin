@@ -6,7 +6,14 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import { KUROMOJI_FILES } from "../src/analyzer/loader/kuromojiFormat";
-import { DictionaryTable, FORMAT_VERSION, SIGNATURE, START_LENGTH } from "../src/analyzer/loader/kuromojinFormat";
+import {
+    DictionaryTable,
+    FORMAT_VERSION,
+    SIGNATURE,
+    START_LENGTH,
+    STRING_BASE,
+    STRING_ESCAPE
+} from "../src/analyzer/loader/kuromojinFormat";
 
 export type KuromojiFileName = (typeof KUROMOJI_FILES)[number];
 /** The decompressed files of a dictionary of kuromoji.js */
@@ -72,7 +79,26 @@ const toPlanes = (buffer: Buffer, width: number): Buffer => {
     for (let i = 0; i < count; i++) for (let b = 0; b < width; b++) result[b * count + i] = buffer[i * width + b];
     return result;
 };
-const bytesOf = (array: Int16Array | Uint16Array | Int32Array): Buffer =>
+/**
+ * Write each number as the difference from the one before, as a zigzag number of three bytes.
+ * The differences are written as planes: the lowest byte of every difference, then the next one, then the highest.
+ */
+const toDifferences = (numbers: number[]): Buffer => {
+    const count = numbers.length;
+    const planes = Buffer.alloc(count * 3);
+    let previous = 0;
+    numbers.forEach((number, i) => {
+        const difference = number - previous;
+        previous = number;
+        const zigzag = difference >= 0 ? difference * 2 : -difference * 2 - 1;
+        if (zigzag > 0xffffff) throw new Error("A difference does not fit in three bytes");
+        planes[i] = zigzag & 0xff;
+        planes[count + i] = (zigzag >> 8) & 0xff;
+        planes[count * 2 + i] = zigzag >> 16;
+    });
+    return planes;
+};
+const bytesOf = (array: Int16Array | Uint16Array): Buffer =>
     Buffer.from(array.buffer, array.byteOffset, array.byteLength);
 const toInt32Array = (buffer: Buffer): Int32Array =>
     new Int32Array(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + (buffer.length & ~3)));
@@ -153,9 +179,7 @@ function readBaseWords(files: KuromojiFiles): Word[] {
     return readWords(files).map(([word, value]) => ({ word, entries: entriesOfValue.get(value) ?? [] }));
 }
 
-/** The marker for a base form that equals the word as written, or a pronunciation that equals the reading */
-const SAME = -1;
-const combinationOf = (entry: DictionaryEntry) =>
+const combinationText = (entry: DictionaryEntry) =>
     [
         entry.pos,
         entry.pos_detail_1,
@@ -209,11 +233,11 @@ export class DictionaryBuilder {
 
         // --- unknown words: the layout of kuromoji.js without the zeros at the end
         this.fixedParts.push(
-            this.part("unk", trim(files["unk.dat.gz"], 10)),
-            this.part("unk_pos", Buffer.concat([trim(files["unk_pos.dat.gz"]), Buffer.from([0])])),
-            this.part("unk_map", trim(files["unk_map.dat.gz"], 4)),
-            this.part("unk_char", files["unk_char.dat.gz"]),
-            this.part("unk_invoke", Buffer.concat([trim(files["unk_invoke.dat.gz"]), Buffer.from([0])]))
+            this.part("unknown_entries", trim(files["unk.dat.gz"], 10)),
+            this.part("unknown_features", Buffer.concat([trim(files["unk_pos.dat.gz"]), Buffer.from([0])])),
+            this.part("unknown_map", trim(files["unk_map.dat.gz"], 4)),
+            this.part("unknown_chars", files["unk_char.dat.gz"]),
+            this.part("unknown_classes", Buffer.concat([trim(files["unk_invoke.dat.gz"]), Buffer.from([0])]))
         );
     }
 
@@ -281,83 +305,109 @@ export class DictionaryBuilder {
                     children++;
                     from = end;
                 }
-                if (children > 0xffff) throw new Error("A node of the trie has too many children");
                 counts[node] = children;
             }
             ranges = next;
         }
+        // the first child of each node, and after the last node the end of its children
+        const firstChildren = [1];
+        for (const count of counts) firstChildren.push(firstChildren[firstChildren.length - 1] + count);
         const endBits = Buffer.alloc(Math.ceil(ends.length / 8));
         ends.forEach((end, i) => {
             if (end) endBits[i >> 3] |= 1 << (i & 7);
         });
         parts.push(
-            this.part("trie_chars", toPlanes(bytesOf(Uint16Array.from(chars)), 2)),
-            this.part("trie_counts", toPlanes(bytesOf(Uint16Array.from(counts)), 2)),
+            this.part("trie_chars", bytesOf(Uint16Array.from(chars))),
+            this.part("trie_children", toDifferences(firstChildren)),
             this.part("trie_ends", endBits)
         );
 
         // --- entries of each word, in the order of the nodes where a word ends
-        const wordCounts: number[] = [];
-        const varints: number[] = [];
-        let previous = 0;
+        // The entries of the word `w` are wordEntries[wordOffsets[w]] .. wordEntries[wordOffsets[w + 1] - 1]
+        const wordOffsets = [0];
+        const wordEntries: number[] = [];
         for (const word of wordsOfNodes) {
-            if (word.entries.length > 255) throw new Error(`The word ${word.word} has too many entries`);
-            wordCounts.push(word.entries.length);
-            for (const number of word.entries) {
-                // the difference from the number before, as a zigzag varint
-                const difference = number - previous;
-                previous = number;
-                let zigzag = difference >= 0 ? difference * 2 : -difference * 2 - 1;
-                while (zigzag >= 128) {
-                    varints.push((zigzag & 127) | 128);
-                    zigzag = Math.floor(zigzag / 128);
-                }
-                varints.push(zigzag);
-            }
+            wordEntries.push(...word.entries);
+            wordOffsets.push(wordEntries.length);
         }
-        parts.push(this.part("word_counts", Buffer.from(wordCounts)), this.part("word_entries", Buffer.from(varints)));
+        parts.push(
+            this.part("word_offsets", toDifferences(wordOffsets)),
+            this.part("word_entries", toDifferences(wordEntries))
+        );
 
         // --- costs and ids of the entries, each in a column of its own
         const left = Int16Array.from(entries, (entry) => entry.left_id);
         const right = Int16Array.from(entries, (entry) => entry.right_id);
         const cost = Int16Array.from(entries, (entry) => entry.word_cost);
-        parts.push(this.part("left_ids", toPlanes(bytesOf(left), 2)));
+        parts.push(this.part("left_ids", bytesOf(left)));
         // the right id has a part only when it differs from the left id in some entry
         if (entries.some((entry) => entry.left_id !== entry.right_id)) {
-            parts.push(this.part("right_ids", toPlanes(bytesOf(right), 2)));
+            parts.push(this.part("right_ids", bytesOf(right)));
         }
-        parts.push(this.part("word_costs", toPlanes(bytesOf(cost), 2)));
+        parts.push(this.part("word_costs", bytesOf(cost)));
 
-        // --- features: four numbers per entry, which point into lists of distinct strings
+        // --- features: the combination and the reading of every entry, and the base form and the pronunciation
+        // of the entries where they differ from the word as written and from the reading.
+        // A string is its position in `strings`, where the strings are in the order of the first entry with them:
+        // most positions are a little after the one before, so their differences are small.
         const combinations = new Map<string, number>();
-        const distinct = new Set<string>();
-        for (const entry of entries) {
-            const combination = combinationOf(entry);
-            if (!combinations.has(combination)) combinations.set(combination, combinations.size);
-            if (entry.basic_form !== entry.surface_form) distinct.add(entry.basic_form);
-            distinct.add(entry.reading);
-            if (entry.pronunciation !== entry.reading) distinct.add(entry.pronunciation);
-        }
-        const strings = [...distinct].sort();
-        const stringId = new Map(strings.map((string, i) => [string, i]));
-        const features = new Int32Array(entries.length * 4);
+        const strings: number[] = [];
+        const positionOf = new Map<string, number>();
+        const position = (text: string): number => {
+            let found = positionOf.get(text);
+            if (found === undefined) {
+                found = strings.length;
+                positionOf.set(text, found);
+                for (let i = 0; i < text.length; i++) {
+                    const code = text.charCodeAt(i);
+                    if (code === 0) throw new Error("A string of the features has the character NUL");
+                    const byte = code - STRING_BASE;
+                    if (byte >= 1 && byte < STRING_ESCAPE) strings.push(byte);
+                    else strings.push(STRING_ESCAPE, code & 0xff, code >> 8);
+                }
+                strings.push(0);
+            }
+            return found;
+        };
+        const combinationOf = new Uint16Array(entries.length);
+        const readings: number[] = [];
+        const baseForms: number[] = [];
+        const pronunciations: number[] = [];
+        const withBaseForm = Buffer.alloc(Math.ceil(entries.length / 8));
+        const withPronunciation = Buffer.alloc(Math.ceil(entries.length / 8));
         entries.forEach((entry, i) => {
-            features[i * 4] = combinations.get(combinationOf(entry)) as number;
-            features[i * 4 + 1] =
-                entry.basic_form === entry.surface_form ? SAME : (stringId.get(entry.basic_form) as number);
-            features[i * 4 + 2] = stringId.get(entry.reading) as number;
-            features[i * 4 + 3] =
-                entry.pronunciation === entry.reading ? SAME : (stringId.get(entry.pronunciation) as number);
+            const combination = combinationText(entry);
+            let combinationNumber = combinations.get(combination);
+            if (combinationNumber === undefined) {
+                combinationNumber = combinations.size;
+                if (combinationNumber > 0xffff) throw new Error("The entries have too many combinations");
+                combinations.set(combination, combinationNumber);
+            }
+            combinationOf[i] = combinationNumber;
+            readings.push(position(entry.reading));
         });
-        const stringCounts = Buffer.alloc(8);
-        stringCounts.writeInt32LE(combinations.size, 0);
-        stringCounts.writeInt32LE(strings.length, 4);
+        // the strings of the readings come first, so that the positions of the readings rise in long runs
+        entries.forEach((entry, i) => {
+            if (entry.pronunciation !== entry.reading) {
+                withPronunciation[i >> 3] |= 1 << (i & 7);
+                pronunciations.push(position(entry.pronunciation));
+            }
+        });
+        entries.forEach((entry, i) => {
+            if (entry.basic_form !== entry.surface_form) {
+                withBaseForm[i >> 3] |= 1 << (i & 7);
+                baseForms.push(position(entry.basic_form));
+            }
+        });
         parts.push(
-            this.part("features", toPlanes(bytesOf(features), 16)),
-            this.part(
-                "strings",
-                Buffer.concat([stringCounts, Buffer.from([...combinations.keys(), ...strings].join("\0"), "utf8")])
-            )
+            this.part("combinations", bytesOf(combinationOf)),
+            this.part("readings", toDifferences(readings)),
+            this.part("with_base_form", withBaseForm),
+            this.part("base_forms", toDifferences(baseForms)),
+            this.part("with_pronunciation", withPronunciation),
+            this.part("pronunciations", toDifferences(pronunciations)),
+            this.part("combination_strings", Buffer.from([...combinations.keys()].join("\0"), "utf8")),
+            this.part("strings", Buffer.from(strings))
         );
         return parts;
     }
@@ -366,7 +416,8 @@ export class DictionaryBuilder {
      * The file: the start, the table, and the parts.
      */
     build(options: BuildOptions): Buffer {
-        const parts = [...this.entryParts(options.versions), ...this.fixedParts];
+        // the connection costs take the longest to decompress, so they are the first part
+        const parts = [...this.fixedParts, ...this.entryParts(options.versions)];
         let entryCount = this.baseEntries.length;
         const versions: DictionaryTable["versions"] = [
             { date: options.baseVersion, entries: entryCount, removed: [], digest: digestOf(BASE_CHANGES) }

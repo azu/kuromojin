@@ -75,6 +75,31 @@ The file has three regions in this order.
 2. The table, written as JSON. It names each part of the data and gives its position in the file, its length in the file, and its length after decompression. It also lists the dictionary versions of the file, with the number of entries up to each version and the numbers of the entries that it removes.
 3. The parts of the data, each compressed as its own gzip stream.
 
+```mermaid
+block-beta
+    columns 4
+    a["Start"] s["Signature KMJD (4 bytes)"] v["Version of the format (4 bytes)"] l["Length of the table (4 bytes)"]
+    b["Table"] t["JSON: the dictionary versions, and the name, position, and lengths of each part"]:3
+    c["Parts"] p1["connection_costs"] p2["unknown_entries"] p3["unknown_features"]
+    space p4["unknown_map"] p5["unknown_chars"] p6["unknown_classes"]
+    space p7["trie_chars"] p8["trie_children"] p9["trie_ends"]
+    space p10["word_offsets"] p11["word_entries"] p12["left_ids"]
+    space p13["word_costs"] p14["combinations"] p15["readings"]
+    space p16["with_base_form"] p17["base_forms"] p18["with_pronunciation"]
+    space p19["pronunciations"] p20["combination_strings"] p21["strings"]
+    style a fill:none,stroke:none
+    style b fill:none,stroke:none
+    style c fill:none,stroke:none
+```
+
+The left column of the diagram names the three regions and is not in the file.
+The start and the table are not compressed, and each part is its own gzip stream.
+The diagram has the parts of the dictionary of the package in the order of the file, from left to right and from top to bottom.
+A reader finds a part by its name in the table, so the format does not fix the order of the parts.
+
+The version of the format and the length of the table are unsigned numbers with the lowest byte first.
+The position of a part in the table counts from the end of the table.
+
 The start and the table are not compressed, so kuromojin checks the signature and the version before it decompresses anything.
 The table comes before the parts, so a reader can decompress each part as soon as its bytes arrive, without waiting for the end of the file.
 A file without the signature, or with a version that the code does not know, ends the load with an error.
@@ -82,26 +107,99 @@ A file without the signature, or with a version that the code does not know, end
 Each part is its own gzip stream so that the parts are decompressed at the same time.
 In Node.js, `zlib` decompresses them on its worker threads, and the length after decompression lets it write each part into one buffer of the right size.
 In a browser, each part goes through its own `DecompressionStream`.
+Every part starts to decompress when the table is read, and kuromojin builds the tables in an order that needs the largest parts last, so it builds from the parts that are ready while the others are decompressed.
+The connection costs take the longest to decompress, so they are the first part of the file.
 
 ### Data of the format of kuromojin
 
 The parts store the same data as the dictionary of kuromoji.js, arranged so that gzip can compress it well and that loading is a few passes over arrays.
+An analysis reads the words, the entries of a word, the costs and ids, and the connection costs for every candidate word, and it reads the features only for the tokens that it returns.
+So the numbers that every candidate needs are columns of their own, and looking at a candidate does not touch a string.
 
-- **Words:** A trie of the UTF-16 code units of the words. The nodes are written in breadth-first order, each with its character, the number of its children, and one bit that tells whether a word ends there. The children of a node are next to each other, so no node stores a position.
-- **Entries of a word:** For each word, the number of its entries and the numbers of the entries. Each number is written as the difference from the one before, in as few bytes as it needs.
+- **Words:** A trie of the UTF-16 code units of the words. The nodes are written in breadth-first order, each with its character, the position of its first child, and one bit that tells whether a word ends there. The children of a node are next to each other in the order of their characters, and they end where the children of the next node start. The words have their numbers in the order of the nodes where they end, so no node stores the number of its word.
+- **Entries of a word:** For each word, the position of its first entry in one list of the numbers of the entries. The entries of a word end where the entries of the next word start.
 - **Costs and ids:** The left id and the word cost of every entry, each in a column of its own. The right id has a column only when it differs from the left id in some entry.
 - **Connection costs:** The matrix of costs, where each cell is written as the difference from the cell on its left.
-- **Features:** For every entry, four numbers: its combination of part of speech and conjugation, its base form, its reading, and its pronunciation. Each number points into a list of distinct strings. A marker replaces the number when the base form equals the word as written, or the pronunciation equals the reading.
+- **Features:** For every entry, its combination of part of speech and conjugation, and its reading. An entry has a base form only when it differs from the word as written, and a pronunciation only when it differs from the reading. One bit for every entry tells whether the entry has the value, and the values are stored without gaps for the entries that have one.
+- **Strings of the features:** The base forms, the readings, and the pronunciations are positions in one list of distinct strings, in the order of the first entry that has each string. A character of the katakana block is one byte, and any other character is three bytes, because almost every reading and pronunciation is written in katakana. The combinations are a short list of their own.
 - **Unknown words:** The classes of characters and the entries of unknown words, as in the dictionary of kuromoji.js.
 
-Numbers of two or four bytes are written as planes: first the lowest byte of every number, then the next byte of every number, and so on.
-Neighboring numbers are often close to each other, so the planes of the higher bytes are long runs of the same value, which gzip makes small.
+The parts have the following names in the table of the file.
+
+| Part | Data | Written as |
+| --- | --- | --- |
+| `trie_chars` | The character of each node | Numbers of two bytes |
+| `trie_children` | The position of the first child of each node | Planes of differences |
+| `trie_ends` | The bit of each node that tells whether a word ends there | Bits |
+| `word_offsets` | The position of the first entry of each word | Planes of differences |
+| `word_entries` | The list of the numbers of the entries | Planes of differences |
+| `left_ids`, `right_ids` | The left id and the right id of each entry | Numbers of two bytes |
+| `word_costs` | The word cost of each entry | Numbers of two bytes |
+| `connection_costs` | The matrix of connection costs | Planes of differences |
+| `combinations` | The combination of each entry | Numbers of two bytes |
+| `combination_strings` | The list of the combinations | UTF-8 |
+| `readings` | The position of the reading of each entry | Planes of differences |
+| `with_base_form`, `with_pronunciation` | The bit of each entry that tells whether it has the value | Bits |
+| `base_forms`, `pronunciations` | The positions of the values, for the entries that have one | Planes of differences |
+| `strings` | The list of distinct strings | One byte or three bytes for a character |
+| `unknown_entries`, `unknown_features`, `unknown_map`, `unknown_chars`, `unknown_classes` | The unknown words | As in the files of kuromoji.js |
+
+The following diagram shows the trie of a dictionary with the three words 東, 京都, and 東京.
+A column is one row of the diagram, and the nodes are in the order of their numbers.
+
+```mermaid
+block-beta
+    columns 6
+    n0["Node"] n1["0"] n2["1"] n3["2"] n4["3"] n5["4"]
+    c0["Character"] c1["(root)"] c2["京"] c3["東"] c4["都"] c5["京"]
+    f0["First child"] f1["1"] f2["3"] f3["4"] f4["5"] f5["5"]
+    e0["A word ends"] e1["0"] e2["0"] e3["1"] e4["1"] e5["1"]
+```
+
+The children of a node are the nodes from its first child to the node before the first child of the next node.
+The first child of node 2 (東) is 4, and the first child of node 3 is 5, so node 4 (京) is the only child of 東.
+The number of a word is the number of 1 bits before its node: 東 is word 0, 京都 is word 1, and 東京 is word 2.
+
+The following diagram shows the features of three entries.
+A column is one row of the diagram, and the entries are in the order of their numbers.
+The base form of 黒文字 and 東京 is the word as written, and the pronunciation of 黒文字 and 書い is the reading, so these values are not stored.
+
+```mermaid
+block-beta
+    columns 5
+    e0["Entry"] e1["黒文字"] e2["書い"] e3["東京"] e4["…"]
+    c0["Combination"] c1["noun"] c2["verb"] c3["noun"] c4["…"]
+    r0["Reading"] r1["クロモジ"] r2["カイ"] r3["トウキョウ"] r4["…"]
+    b0["Has a base form"] b1["0"] b2["1"] b3["0"] b4["…"]
+    p0["Has a pronunciation"] p1["0"] p2["0"] p3["1"] p4["…"]
+    space:5
+    v0["Base forms"] v1["書く"] v2["…"] space:2
+    w0["Pronunciations"] w1["トーキョー"] w2["…"] space:2
+    b2 --> v1
+    p3 --> w1
+```
+
+The value of an entry is at the position that is the number of 1 bits before the entry.
+書い is the first entry with a base form, so its base form is the first value of the base forms.
+
+A position in a list and the number of an entry are mostly a little larger than the one before.
+Each number of such a column is written as the difference from the one before, in three bytes.
+A difference can be negative, so its sign is moved to its lowest bit before it is written: 0, -1, 1, -2, and 2 are written as 0, 1, 2, 3, and 4.
+The differences are written as planes: first the lowest byte of every difference, then the next byte of every difference, and then the highest.
+The planes of the higher bytes are long runs of the same value, which gzip makes small.
+The connection costs are written as planes of two bytes in the same way.
+The other numbers of two bytes are written as they are in memory, because gzip makes those columns as small as their planes.
 
 The number of an entry is its position in the dictionary of kuromoji.js.
 `word_id` is computed from it, so it has the same value as in the reference result.
 
-When the dictionary is loaded, kuromojin joins the planes, adds up the differences, and builds a hash table from a node of the trie and a character to the child node.
+When the dictionary is loaded, kuromojin adds up the differences and counts the bits of each bit set, once for every 32 bits.
+It uses the columns that are written as they are in memory from the decompressed bytes, without a copy.
+For the lookup in the trie, it builds only a table from the first character of a word to its node, because the root has far more children than any other node.
+Every later step of a lookup searches the children of a node by bisection, and a lookup gets the number of a word by counting the end bits before the node.
+The value of an entry in a column without gaps is found in the same way, by counting the bits before the entry.
 The strings of the features stay in one buffer and are decoded only for the tokens that an analysis returns.
+The strings that were decoded last are kept in a table of a fixed size, so a string that many tokens share is not decoded for each of them.
 
 ### Building the dictionary of the package
 
@@ -211,6 +309,23 @@ It was not chosen, because a worker has no `window`, so a module in a worker cou
 
 The parts could be separate files in the dictionary directory, next to a file that tells the version of the format.
 It was not chosen, because a dictionary is used only as a whole. Separate files need a request for each part in a browser, and a copy or a cache can end up with parts of different versions.
+
+### Build a hash table for the lookup in the trie
+
+The load could build a hash table from a node and a character to the child node, so that a step of a lookup is one probe.
+It was not chosen, because the table is larger than the trie, and building it takes a large part of the load.
+A node has few children on average, so the bisection is not slower than the probe.
+
+### Write the strings of the features as UTF-8
+
+The strings could be UTF-8, which every platform decodes.
+It was not chosen, because a katakana character is three bytes in UTF-8, and the readings and the pronunciations are most of the strings: they would be most of the memory of the features.
+
+### Write the numbers with a variable length
+
+A small number could be one byte and a larger one two or three bytes, with one bit of each byte that tells whether another byte follows.
+It was not chosen, because the loop that reads such numbers has to branch on every byte, which makes the load slower.
+With a fixed length of three bytes, one loop without a branch reads every column of differences, and the planes of the higher bytes are as small after gzip.
 
 ### Compress the whole file as one gzip stream
 

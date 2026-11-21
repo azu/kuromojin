@@ -1,18 +1,18 @@
 // LICENSE : MIT
+import { BitSet, countBits } from "./BitSet";
 import type { WordTrie } from "./Dictionary";
 
 /**
  * Read-only trie of UTF-16 code units, for a dictionary in the format of kuromojin.
- * The file has the nodes in breadth-first order, so the children of a node are next to each other.
- * For the lookup, (parent, character) -> child is put into a hash table when the dictionary is loaded.
+ * The file has the nodes in breadth-first order, so the children of a node are next to each other:
+ * they are the nodes from the first child of the node to the first child of the next node.
+ * They are in the order of their characters. The lookup searches the children of a node by bisection.
+ * The words have their numbers in the order of the nodes where a word ends,
+ * so the number of a word is the number of ends before its node.
  */
 export class CharTrie implements WordTrie {
-    private readonly parentOf: Int32Array;
-    /** open addressing hash table of nodes. 0 = empty: node 0 is the root and is never a child */
-    private readonly table: Int32Array;
-    private readonly mask: number;
-    /** node -> number of the word that ends at the node, or -1 */
-    private readonly wordOf: Int32Array;
+    /** the nodes where a word ends */
+    private readonly ends: BitSet;
     /** character -> child of the root, or -1 */
     private readonly rootChild: Int32Array;
     /** number of words */
@@ -20,73 +20,53 @@ export class CharTrie implements WordTrie {
 
     /**
      * @param chars character of each node
-     * @param counts number of children of each node
-     * @param ends bit set of the nodes where a word ends
+     * @param childStart first child of each node, and after the last node the end of its children
+     * @param endBits bit set of the nodes where a word ends
      */
     constructor(
         private readonly chars: Uint16Array,
-        counts: Uint16Array,
-        ends: Uint8Array
+        private readonly childStart: Int32Array,
+        endBits: Uint8Array
     ) {
         const n = chars.length;
-        const childStart = new Int32Array(n + 1);
-        const wordOf = new Int32Array(n);
-        let next = 1;
-        let word = 0;
-        for (let i = 0; i < n; i++) {
-            childStart[i] = next;
-            next += counts[i];
-            wordOf[i] = (ends[i >> 3] >> (i & 7)) & 1 ? word++ : -1;
-        }
-        childStart[n] = next;
-        this.wordOf = wordOf;
-        this.size = word;
+        this.ends = new BitSet(endBits, n);
+        this.size = this.ends.size;
         const rootChild = new Int32Array(0x10000).fill(-1);
         for (let i = childStart[0]; i < childStart[1]; i++) rootChild[chars[i]] = i;
         this.rootChild = rootChild;
-        let size = 1024;
-        while (size < n * 2) size *= 2;
-        const mask = size - 1;
-        const table = new Int32Array(size);
-        const parentOf = new Int32Array(n);
-        for (let parent = 1; parent < n; parent++) {
-            for (let child = childStart[parent]; child < childStart[parent + 1]; child++) {
-                parentOf[child] = parent;
-                let slot = (Math.imul(parent, 0x9e3779b1) ^ Math.imul(chars[child], 0x85ebca6b)) & mask;
-                while (table[slot] !== 0) slot = (slot + 1) & mask;
-                table[slot] = child;
-            }
-        }
-        this.table = table;
-        this.mask = mask;
-        this.parentOf = parentOf;
     }
 
     commonPrefixMatches(text: string, start: number, out: Int32Array): number {
         const length = text.length;
-        const { chars, parentOf, table, mask, wordOf } = this;
+        const { chars, childStart } = this;
+        const ends = this.ends.bits;
+        const endsBefore = this.ends.before;
         const limit = out.length >> 1;
         let node = this.rootChild[text.charCodeAt(start)];
         let i = start + 1;
         let found = 0;
         while (node !== -1) {
-            const word = wordOf[node];
-            if (word !== -1 && found < limit) {
-                out[found * 2] = word;
+            const bits = ends[node >> 5];
+            const bit = 1 << (node & 31);
+            if ((bits & bit) !== 0 && found < limit) {
+                out[found * 2] = endsBefore[node >> 5] + countBits(bits & (bit - 1));
                 out[found * 2 + 1] = i;
                 found++;
             }
             if (i >= length) break;
             const code = text.charCodeAt(i++);
-            let slot = (Math.imul(node, 0x9e3779b1) ^ Math.imul(code, 0x85ebca6b)) & mask;
-            const parent = node;
+            let low = childStart[node];
+            let high = childStart[node + 1] - 1;
             node = -1;
-            for (let child = table[slot]; child !== 0; child = table[slot]) {
-                if (parentOf[child] === parent && chars[child] === code) {
-                    node = child;
+            while (low <= high) {
+                const middle = (low + high) >> 1;
+                const char = chars[middle];
+                if (char < code) low = middle + 1;
+                else if (char > code) high = middle - 1;
+                else {
+                    node = middle;
                     break;
                 }
-                slot = (slot + 1) & mask;
             }
         }
         return found;

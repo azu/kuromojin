@@ -95,6 +95,10 @@ let kuromojiFiles: KuromojiFiles | undefined;
 const getKuromojiFiles = () => kuromojiFiles ?? (kuromojiFiles = readKuromojiFiles(kuromojiDictionaryDirectory));
 let baseEntries: BaseEntry[] | undefined;
 const getBaseEntries = () => baseEntries ?? (baseEntries = readBaseEntries(getKuromojiFiles()));
+/** Every entry of the base dictionary, in the order of the dictionary */
+export function allBaseEntries(): BaseEntry[] {
+    return getBaseEntries();
+}
 /** The entries of a word in the base dictionary */
 export function baseEntriesOf(word: string): BaseEntry[] {
     return getBaseEntries().filter((entry) => entry.surface_form === word);

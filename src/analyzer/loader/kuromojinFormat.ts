@@ -1,9 +1,10 @@
 // LICENSE : MIT
+import { BitSet } from "../BitSet";
 import { CharTrie } from "../CharTrie";
 import type { Dictionary, KnownFeatures } from "../Dictionary";
 import type { DictionaryVersions } from "../DictionaryVersions";
 import type { Token } from "../Token";
-import { joinPlanes, readInt32, toInt16Array, toInt32Array, Utf8Reader } from "./bytes";
+import { readDifferences, toInt16Array, toUint16Array } from "./bytes";
 import type { Platform } from "./platform";
 import { readUnknownWords } from "./unknownWords";
 
@@ -31,64 +32,83 @@ export type DictionaryTable = {
     parts: { name: string; offset: number; length: number; rawLength: number }[];
 };
 
-/** The marker for a base form that equals the word as written, or a pronunciation that equals the reading */
-const SAME = -1;
+/** The first character that a string of the features has as one byte: the byte is the character - STRING_BASE */
+export const STRING_BASE = 0x30a0;
+/** The byte before a character of a string of the features that is written as two bytes */
+export const STRING_ESCAPE = 0xff;
+
+/** The number of decoded strings that the features keep: 2 ** DECODED_BITS */
+const DECODED_BITS = 14;
+const DECODED_STRINGS = 1 << DECODED_BITS;
+const DECODED_SHIFT = 32 - DECODED_BITS;
 
 /**
  * The features of the entries of a dictionary of kuromojin.
- * An entry has four numbers: its combination of part of speech and conjugation, its base form, its reading,
- * and its pronunciation. The last three point into a list of strings, which are decoded when they are first used.
+ * An entry has its combination of part of speech and conjugation, and its reading.
+ * It has a base form only when that differs from the word as written,
+ * and a pronunciation only when that differs from the reading.
+ * The three strings are positions in one buffer, and they are decoded when they are first used.
  */
 class KuromojinFeatures implements KnownFeatures {
     /** pos, pos_detail_1, pos_detail_2, pos_detail_3, conjugated_type, conjugated_form */
     private readonly combinations: string[][];
-    private readonly reader: Utf8Reader;
-    /** start of each string in the buffer. The end is the start of the next one - 1 (NUL). */
-    private readonly starts: Int32Array;
-    private readonly decoded: (string | undefined)[] = [];
+    /**
+     * The strings that were decoded last: the slot of a position has the position and its string.
+     * A position replaces another position with the same slot, so the number of kept strings has a limit.
+     */
+    private readonly decodedPositions = new Int32Array(DECODED_STRINGS).fill(-1);
+    private readonly decoded: string[] = new Array<string>(DECODED_STRINGS).fill("");
 
+    /**
+     * @param combinationOf entry -> its combination
+     * @param readings entry -> position of its reading in `strings`
+     * @param withBaseForm the entries whose base form differs from the word as written
+     * @param baseForms position of the base form in `strings`, for the entries of `withBaseForm` in their order
+     * @param withPronunciation the entries whose pronunciation differs from the reading
+     * @param pronunciations position of the pronunciation in `strings`, for the entries of `withPronunciation`
+     * @param combinationStrings the combinations as UTF-8, each ended by NUL
+     * @param strings the strings. A character is one byte for the katakana block and the characters after it,
+     *   or STRING_ESCAPE and its two bytes. NUL ends a string.
+     */
     constructor(
-        private readonly numbers: Int32Array,
-        strings: Uint8Array
+        private readonly combinationOf: Uint16Array,
+        private readonly readings: Int32Array,
+        private readonly withBaseForm: BitSet,
+        private readonly baseForms: Int32Array,
+        private readonly withPronunciation: BitSet,
+        private readonly pronunciations: Int32Array,
+        combinationStrings: Uint8Array,
+        private readonly strings: Uint8Array
     ) {
-        // the number of combinations, the number of strings, and then all of them separated by NUL
-        const combinationCount = readInt32(strings, 0);
-        const stringCount = readInt32(strings, 4);
-        this.reader = new Utf8Reader(strings);
-        let position = 8;
-        this.combinations = [];
-        for (let i = 0; i < combinationCount; i++) {
-            let end = strings.indexOf(0, position);
-            if (end === -1) end = strings.length;
-            this.combinations.push(this.reader.decode(position, end).split(","));
-            position = end + 1;
-        }
-        const starts = new Int32Array(stringCount + 1);
-        for (let i = 0; i < stringCount; i++) {
-            starts[i] = position;
-            const end = strings.indexOf(0, position);
-            position = end === -1 ? strings.length + 1 : end + 1;
-        }
-        starts[stringCount] = position;
-        this.starts = starts;
+        this.combinations = new TextDecoder("utf-8")
+            .decode(combinationStrings)
+            .split("\0")
+            .map((combination) => combination.split(","));
     }
 
-    private string(id: number): string {
-        let value = this.decoded[id];
-        if (value === undefined) {
-            value = this.reader.decode(this.starts[id], this.starts[id + 1] - 1);
-            this.decoded[id] = value;
+    private string(position: number): string {
+        const slot = Math.imul(position, 0x9e3779b1) >>> DECODED_SHIFT;
+        if (this.decodedPositions[slot] === position) return this.decoded[slot];
+        const strings = this.strings;
+        const codes: number[] = [];
+        for (let p = position, byte = strings[p]; byte !== 0; byte = strings[++p]) {
+            if (byte === STRING_ESCAPE) {
+                codes.push(strings[p + 1] | (strings[p + 2] << 8));
+                p += 2;
+            } else {
+                codes.push(STRING_BASE + byte);
+            }
         }
+        const value = String.fromCharCode.apply(null, codes);
+        this.decodedPositions[slot] = position;
+        this.decoded[slot] = value;
         return value;
     }
 
     token(entry: number, position: number, surface: string): Token {
-        const i = entry * 4;
-        const numbers = this.numbers;
-        const combination = this.combinations[numbers[i]];
-        const basic = numbers[i + 1];
-        const reading = this.string(numbers[i + 2]);
-        const pronunciation = numbers[i + 3];
+        const combination = this.combinations[this.combinationOf[entry]];
+        const reading = this.string(this.readings[entry]);
+        const { withBaseForm, withPronunciation } = this;
         return {
             word_id: entry * 10,
             word_type: "KNOWN",
@@ -100,47 +120,39 @@ class KuromojinFeatures implements KnownFeatures {
             pos_detail_3: combination[3],
             conjugated_type: combination[4],
             conjugated_form: combination[5],
-            basic_form: basic === SAME ? surface : this.string(basic),
+            basic_form: withBaseForm.has(entry) ? this.string(this.baseForms[withBaseForm.countBelow(entry)]) : surface,
             reading: reading,
-            pronunciation: pronunciation === SAME ? reading : this.string(pronunciation)
+            pronunciation: withPronunciation.has(entry)
+                ? this.string(this.pronunciations[withPronunciation.countBelow(entry)])
+                : reading
         };
     }
 }
 
 /**
- * Read the entries of each word: the number of entries per word, and the numbers of the entries.
- * Each number is written as the difference from the one before, as a zigzag varint.
+ * Join the connection costs, which are written as planes.
+ * The first two numbers are the sizes, and each cell is written as the difference from the cell on its left.
  */
-function readWordEntries(counts: Uint8Array, varints: Uint8Array): { offsets: Int32Array; entries: Int32Array } {
-    const offsets = new Int32Array(counts.length + 1);
-    let total = 0;
-    for (let i = 0; i < counts.length; i++) {
-        offsets[i] = total;
-        total += counts[i];
+function readConnectionCosts(planes: Uint8Array): Int16Array {
+    const count = planes.length >> 1;
+    const output = new Int16Array(count);
+    const first = Math.min(3, count);
+    for (let i = 0; i < first; i++) output[i] = planes[i] | (planes[count + i] << 8);
+    let cost = count > 2 ? output[2] : 0;
+    for (let i = 3; i < count; i++) {
+        // the array keeps the low 16 bits of the sum
+        cost = (cost + (planes[i] | (planes[count + i] << 8))) | 0;
+        output[i] = cost;
     }
-    offsets[counts.length] = total;
-    const entries = new Int32Array(total);
-    let previous = 0;
-    for (let i = 0, p = 0; i < total; i++) {
-        let zigzag = 0;
-        let scale = 1;
-        let byte: number;
-        do {
-            byte = varints[p++];
-            zigzag += (byte & 127) * scale;
-            scale *= 128;
-        } while (byte >= 128);
-        previous += zigzag % 2 === 0 ? zigzag / 2 : -(zigzag + 1) / 2;
-        entries[i] = previous;
-    }
-    return { offsets, entries };
+    return output;
 }
 
 /**
  * Read a dictionary file in the format of kuromojin:
  * 1. the start: signature (4 bytes), version of the format (uint32), length of the table (uint32)
  * 2. the table (JSON): the dictionary versions, and the name, position, and lengths of each part
- * 3. the parts, each as its own gzip stream, so that they are decompressed at the same time
+ * 3. the parts, each as its own gzip stream, so that they are decompressed at the same time.
+ *    The parts that take the longest to decompress come first.
  * @param path the path of the file, for the messages of errors
  */
 export async function readKuromojinDictionary(file: Uint8Array, path: string, platform: Platform): Promise<Dictionary> {
@@ -157,31 +169,54 @@ export async function readKuromojinDictionary(file: Uint8Array, path: string, pl
     }
     const dataStart = START_LENGTH + view.getUint32(8, true);
     const table = JSON.parse(new TextDecoder().decode(file.subarray(START_LENGTH, dataStart))) as DictionaryTable;
-    const parts = new Map<string, Uint8Array>();
-    await Promise.all(
-        table.parts.map(async (part) => {
-            const data = file.subarray(dataStart + part.offset, dataStart + part.offset + part.length);
-            parts.set(part.name, await platform.gunzip(data, part.rawLength));
-        })
-    );
-    const part = (name: string): Uint8Array => {
+    // Every part starts to decompress now, in the order of the file, and the tables below are built in the order
+    // that needs each part as late as its size asks for: the building runs while later parts are decompressed.
+    const parts = new Map<string, Promise<Uint8Array>>();
+    for (const { name, offset, length, rawLength } of table.parts) {
+        const data = file.subarray(dataStart + offset, dataStart + offset + length);
+        const part = platform.gunzip(data, rawLength);
+        // An error of a part is thrown where the part is awaited. Until then it is not an unhandled rejection.
+        part.catch(() => {});
+        parts.set(name, part);
+    }
+    const part = (name: string): Promise<Uint8Array> => {
         const data = parts.get(name);
         if (!data) throw new Error(`${path} does not have the part "${name}" of a dictionary of kuromojin.`);
         return data;
     };
-    const uint16Planes = (name: string) => new Uint16Array(joinPlanes(part(name), 2).buffer);
-    const int16Planes = (name: string) => toInt16Array(joinPlanes(part(name), 2));
 
-    const trie = new CharTrie(uint16Planes("trie_chars"), uint16Planes("trie_counts"), part("trie_ends"));
-    const { offsets, entries } = readWordEntries(part("word_counts"), part("word_entries"));
-    const left = int16Planes("left_ids");
+    const unknownWords = readUnknownWords(
+        await part("unknown_entries"),
+        await part("unknown_features"),
+        await part("unknown_map"),
+        await part("unknown_chars"),
+        await part("unknown_classes")
+    );
+    const trie = new CharTrie(
+        toUint16Array(await part("trie_chars")),
+        readDifferences(await part("trie_children")),
+        await part("trie_ends")
+    );
+    const wordOffsets = readDifferences(await part("word_offsets"));
+    const wordEntries = readDifferences(await part("word_entries"));
+    const left = toInt16Array(await part("left_ids"));
     // the right id has a part only when it differs from the left id in some entry
-    const right = parts.has("right_ids") ? int16Planes("right_ids") : left;
-    const cost = int16Planes("word_costs");
-    // each cell is written as the difference from the cell on its left
-    const connectionCosts = int16Planes("connection_costs");
-    for (let i = 3; i < connectionCosts.length; i++) connectionCosts[i] += connectionCosts[i - 1];
-    const features = new KuromojinFeatures(toInt32Array(joinPlanes(part("features"), 16)), part("strings"));
+    const right = parts.has("right_ids") ? toInt16Array(await part("right_ids")) : left;
+    const cost = toInt16Array(await part("word_costs"));
+    const entryCount = left.length;
+    const withBaseForm = new BitSet(await part("with_base_form"), entryCount);
+    const withPronunciation = new BitSet(await part("with_pronunciation"), entryCount);
+    const features = new KuromojinFeatures(
+        toUint16Array(await part("combinations")),
+        readDifferences(await part("readings")),
+        withBaseForm,
+        readDifferences(await part("base_forms")),
+        withPronunciation,
+        readDifferences(await part("pronunciations")),
+        await part("combination_strings"),
+        await part("strings")
+    );
+    const connectionCosts = readConnectionCosts(await part("connection_costs"));
 
     const versions: DictionaryVersions = table.versions.map((version) => ({
         date: version.date,
@@ -191,12 +226,12 @@ export async function readKuromojinDictionary(file: Uint8Array, path: string, pl
 
     return {
         trie,
-        wordOffsets: offsets,
-        wordEntries: entries,
+        wordOffsets,
+        wordEntries,
         known: { left, right, cost },
         knownFeatures: features,
         connectionCosts,
-        ...readUnknownWords(part("unk"), part("unk_pos"), part("unk_map"), part("unk_char"), part("unk_invoke")),
+        ...unknownWords,
         versions
     };
 }
