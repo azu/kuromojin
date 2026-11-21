@@ -131,7 +131,7 @@ Node.js では、`zlib` がワーカースレッドで展開し、展開後の�
 | `with_base_form`、`with_pronunciation` | 各エントリーの、値を持つかどうかを示すビット | ビット |
 | `base_forms`、`pronunciations` | 値を持つエントリーの分の、値の位置 | 差のプレーン |
 | `strings` | 重複のない文字列のリスト | 1 文字を 1 バイトまたは 3 バイト |
-| `unk`、`unk_pos`、`unk_map`、`unk_char`、`unk_invoke` | 未知語 | kuromoji.js のファイルと同じ |
+| `unknown_entries`、`unknown_features`、`unknown_map`、`unknown_chars`、`unknown_classes` | 未知語 | kuromoji.js のファイルと同じ |
 
 次の図は、「東」「京都」「東京」の 3 つの単語を持つ辞書のトライを示します。
 図の 1 行が 1 つの列で、ノードは番号の順に並びます。

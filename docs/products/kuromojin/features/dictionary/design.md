@@ -131,7 +131,7 @@ The parts have the following names in the table of the file.
 | `with_base_form`, `with_pronunciation` | The bit of each entry that tells whether it has the value | Bits |
 | `base_forms`, `pronunciations` | The positions of the values, for the entries that have one | Planes of differences |
 | `strings` | The list of distinct strings | One byte or three bytes for a character |
-| `unk`, `unk_pos`, `unk_map`, `unk_char`, `unk_invoke` | The unknown words | As in the files of kuromoji.js |
+| `unknown_entries`, `unknown_features`, `unknown_map`, `unknown_chars`, `unknown_classes` | The unknown words | As in the files of kuromoji.js |
 
 The following diagram shows the trie of a dictionary with the three words 東, 京都, and 東京.
 A column is one row of the diagram, and the nodes are in the order of their numbers.

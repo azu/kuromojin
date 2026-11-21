@@ -233,11 +233,11 @@ export class DictionaryBuilder {
 
         // --- unknown words: the layout of kuromoji.js without the zeros at the end
         this.fixedParts.push(
-            this.part("unk", trim(files["unk.dat.gz"], 10)),
-            this.part("unk_pos", Buffer.concat([trim(files["unk_pos.dat.gz"]), Buffer.from([0])])),
-            this.part("unk_map", trim(files["unk_map.dat.gz"], 4)),
-            this.part("unk_char", files["unk_char.dat.gz"]),
-            this.part("unk_invoke", Buffer.concat([trim(files["unk_invoke.dat.gz"]), Buffer.from([0])]))
+            this.part("unknown_entries", trim(files["unk.dat.gz"], 10)),
+            this.part("unknown_features", Buffer.concat([trim(files["unk_pos.dat.gz"]), Buffer.from([0])])),
+            this.part("unknown_map", trim(files["unk_map.dat.gz"], 4)),
+            this.part("unknown_chars", files["unk_char.dat.gz"]),
+            this.part("unknown_classes", Buffer.concat([trim(files["unk_invoke.dat.gz"]), Buffer.from([0])]))
         );
     }
 

@@ -186,11 +186,11 @@ export async function readKuromojinDictionary(file: Uint8Array, path: string, pl
     };
 
     const unknownWords = readUnknownWords(
-        await part("unk"),
-        await part("unk_pos"),
-        await part("unk_map"),
-        await part("unk_char"),
-        await part("unk_invoke")
+        await part("unknown_entries"),
+        await part("unknown_features"),
+        await part("unknown_map"),
+        await part("unknown_chars"),
+        await part("unknown_classes")
     );
     const trie = new CharTrie(
         toUint16Array(await part("trie_chars")),
