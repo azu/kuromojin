@@ -49,17 +49,21 @@
     "preview": "npm run cp-public && vite preview",
     "profile": "node benchmark/profile.js",
     "test": "tsc -p test && pnpm run build && vitest run",
+    "test:e2e": "tsc -p e2e && pnpm run build && vitest run -c vitest.e2e.config.mts",
     "watch": "tsc -p . --watch",
     "web:build": "npm run cp-public && vite build"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "esbuild": "^0.28.2",
     "kuromoji": "0.1.2",
     "lint-staged": "^17.6.1",
+    "playwright": "1.63.0",
     "prettier": "^3.10.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.1"
+    "vitest": "^5.1.1",
+    "webpack": "^5.113.0"
   },
   "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0",
   "email": "azuciao@gmail.com",
