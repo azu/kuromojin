@@ -1,6 +1,6 @@
 # kuromojin [![Actions Status: test](https://github.com/textlint/kuromojin/actions/workflows/test.yml/badge.svg)](https://github.com/textlint/kuromojin/actions/workflows/test.yml)
 
-Japanese morphological analyzer for JavaScript, used mainly by [textlint](https://github.com/textlint/textlint) rules.
+Japanese morphological analyzer with a bundled dictionary and cached `tokenize()`, used mainly by [textlint](https://github.com/textlint/textlint) rules.
 
 kuromojin returns the same tokens as [kuromoji.js](https://github.com/takuyaa/kuromoji.js "kuromoji.js") 0.1.2 with its IPADIC dictionary.
 It has its own analyzer and its own dictionary file, so it does not depend on kuromoji.js.
