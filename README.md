@@ -226,40 +226,44 @@ kuromojin decides the dictionary path when the first call starts loading. It use
 1. `dicPath` of the options of that call
 2. The environment variable `KUROMOJIN_DIC_PATH`
 3. `globalThis.kuromojin.dicPath`
-4. The dictionary of the package (Node.js only)
+4. The dictionary of the package (Node.js, and a page built with a bundler that supports `new URL(path, import.meta.url)`)
 
 The dictionary is loaded once, and every later call uses the loaded one.
 
 ### Browser
 
-A browser needs the URL of a dictionary, and it needs [DecompressionStream](https://developer.mozilla.org/docs/Web/API/DecompressionStream).
+A browser needs [DecompressionStream](https://developer.mozilla.org/docs/Web/API/DecompressionStream).
 
-With a bundler, let the bundler copy the dictionary of the package and give its URL. The URL has to keep the ending `.dict`.
-
-[Vite](https://vite.dev/): import the file with `?url`. The [online playground](web/index.ts) is built in this way.
+With a bundler that supports [`new URL(path, import.meta.url)`](https://vite.dev/guide/assets#new-url-url-import-meta-url), such as [Vite](https://vite.dev/) and [webpack 5](https://webpack.js.org/guides/asset-modules/#url-assets), nothing has to be set.
+The bundler copies the dictionary of the package (`dict/kuromojin.dict`, 5 MB) into the build, and kuromojin loads it from the URL of the copy.
+This also works when kuromojin is used by a textlint rule written in CommonJS.
 
 ```js
 import { tokenize } from "kuromojin";
-import dictionaryUrl from "kuromojin/dict/kuromojin.dict?url";
 
-const tokens = await tokenize(text, { dicPath: dictionaryUrl });
+// loads the copy of the dictionary that the bundler put into the build
+const tokens = await tokenize(text);
 ```
 
-[webpack](https://webpack.js.org/): handle `.dict` files as [asset modules](https://webpack.js.org/guides/asset-modules/).
+[Next.js](https://nextjs.org/) with Turbopack works in the same way in the browser.
+On the server, for example in a Server Component, list kuromojin in [`serverExternalPackages`](https://nextjs.org/docs/app/api-reference/config/next-config-js/serverExternalPackages), so that it is loaded from `node_modules` and finds the dictionary of the package:
 
 ```js
-// webpack.config.js
+// next.config.js
 module.exports = {
-    module: {
-        rules: [{ test: /\.dict$/, type: "asset/resource" }]
-    }
+    serverExternalPackages: ["kuromojin"]
 };
 ```
 
+The `browser` field of `package.json` gives a bundler this code. A bundler that does not read the field or does not support the expression, such as esbuild, needs the dictionary path.
+With esbuild, copy the dictionary with the [file loader](https://esbuild.github.io/content-types/#file) and give its URL. The URL has to keep the ending `.dict`.
+
 ```js
+// esbuild main.js --bundle --loader:.dict=file --outdir=dist
 import { tokenize } from "kuromojin";
 import dictionaryUrl from "kuromojin/dict/kuromojin.dict";
 
+// dictionaryUrl is relative to the page unless --public-path is set
 const tokens = await tokenize(text, { dicPath: dictionaryUrl });
 ```
 
@@ -402,6 +406,7 @@ The words of the dictionary are the same.
     pnpm install
     pnpm test
 
+- `pnpm run test:e2e` packs kuromojin, builds pages with Vite and webpack, and checks the tokens in Chromium. It needs the Chromium of Playwright: `pnpm exec playwright install chromium`.
 - `pnpm run build:dict` converts the dictionary of kuromoji.js 0.1.2 and the changes of `dict-source/versions.csv` into `dict/kuromojin.dict`.
 - `pnpm run profile` measures the working tree on fixed sets of texts: the load of the dictionary, the analysis, the memory, the allocation, the installed size, and the functions with the most CPU time. `pnpm run compare` measures `master` too and prints each number with its ratio and the texts whose tokens differ. CI runs the comparison for each pull request and puts it in the job summary.
 - The specifications are in [docs/products/kuromojin](docs/products/kuromojin/product.md).

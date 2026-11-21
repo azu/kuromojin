@@ -33,6 +33,7 @@
     "src/**/*"
   ],
   "exclude": [
+    "src/**/*.browser.mts",
     ".git",
     "node_modules"
   ]

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    /* The modules for browsers are ES modules: a bundler reads `import.meta.url` in them */
+    "module": "es2020",
+    "types": []
+  },
+  "include": ["src/**/*.browser.mts"],
+  "exclude": []
+}

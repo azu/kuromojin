@@ -7,6 +7,7 @@ It is a TypeScript package managed with pnpm.
 
 - Install and build: `pnpm install` and `pnpm run build`
 - Test: `pnpm test` (type-checks the tests, builds `lib/`, and runs the tests with Vitest)
+- Browser e2e: `pnpm run test:e2e` (builds pages with Vite and webpack from the packed package and runs them in Chromium; needs `pnpm exec playwright install chromium`)
 - Write code, comments, commit messages, issues, and pull requests in English
 - Performance: `pnpm run profile` measures the working tree on fixed sets of texts (the load of the dictionary, the analysis, the memory, the allocation, the installed size, and the functions with the most CPU time). `pnpm run compare` (`--set small` for a quick check) builds `master` too, measures both in turns, and prints the texts whose tokens differ and each number with its ratio. When a change touches the analyzer, the loading of the dictionary, the dictionary, or the reuse of tokens, paste the Markdown output of `pnpm run compare` into the description of the pull request. The specification is [Performance profile](docs/products/kuromojin/features/performance-profile/requirements.md)
 
