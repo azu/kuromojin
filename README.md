@@ -129,24 +129,74 @@ tokenizer.tokenize(text); // あり, ます, 。, なぜなら, JavaScript, は
 
 ### Token
 
-| Field | Meaning |
-| --- | --- |
-| `word_id` | The identifier of the word in the dictionary |
-| `word_type` | `KNOWN` for a word in the dictionary, `UNKNOWN` for an unknown word |
-| `word_position` | The position of the first character of the word in the text. The first character of the text is 1 |
-| `surface_form` | The word as written in the text (表層形) |
-| `pos` | The part of speech (品詞), such as `名詞` or `助詞` |
-| `pos_detail_1`, `pos_detail_2`, `pos_detail_3` | The subcategories of the part of speech (品詞細分類). `*` when there is none |
-| `conjugated_type` | The conjugation type (活用型). `*` when the word does not conjugate |
-| `conjugated_form` | The conjugation form (活用形). `*` when the word does not conjugate |
-| `basic_form` | The base form (基本形). `*` for an unknown word |
-| `reading` | The reading in katakana (読み). A token of an unknown word does not have this field |
-| `pronunciation` | The pronunciation in katakana (発音). A token of an unknown word does not have this field |
+A token is one word of the text, with what the dictionary says about it.
+`tokenize("黒文字を買った")` resolves with four tokens: `黒文字`, `を`, `買っ`, and `た`. This is the token of `買っ`.
+
+```json
+{
+    "word_id": 3262940,
+    "word_type": "KNOWN",
+    "word_position": 5,
+    "surface_form": "買っ",
+    "pos": "動詞",
+    "pos_detail_1": "自立",
+    "pos_detail_2": "*",
+    "pos_detail_3": "*",
+    "conjugated_type": "五段・ワ行促音便",
+    "conjugated_form": "連用タ接続",
+    "basic_form": "買う",
+    "reading": "カッ",
+    "pronunciation": "カッ"
+}
+```
+
+To see the tokens of any text, type it in the [online playground](https://kuromojin.netlify.app/#%E9%BB%92%E6%96%87%E5%AD%97%E3%82%92%E8%B2%B7%E3%81%A3%E3%81%9F). It is the quickest way to find which values a word gets before you write a condition on them.
+
+#### Fields
+
+| Field | Meaning | Example (`買っ`) |
+| --- | --- | --- |
+| `surface_form` | The word as written in the text (表層形) | `買っ` |
+| `basic_form` | The base form (基本形). `*` for an unknown word | `買う` |
+| `pos` | The [part of speech](#parts-of-speech) (品詞) | `動詞` |
+| `pos_detail_1`, `pos_detail_2`, `pos_detail_3` | The subcategories of the part of speech (品詞細分類), from general to specific. `*` when there is none | `自立`, `*`, `*` |
+| `conjugated_type` | The conjugation type (活用型). `*` when the word does not conjugate | `五段・ワ行促音便` |
+| `conjugated_form` | The conjugation form (活用形). `*` when the word does not conjugate | `連用タ接続` |
+| `reading` | The reading in katakana (読み). A token of an unknown word does not have this field | `カッ` |
+| `pronunciation` | The pronunciation in katakana (発音). A token of an unknown word does not have this field | `カッ` |
+| `word_position` | The position of the first character of the word in the text. The first character of the text is 1 | `5` |
+| `word_type` | `KNOWN` for a word in the dictionary, `UNKNOWN` for an unknown word | `KNOWN` |
+| `word_id` | The identifier of the word in the dictionary | `3262940` |
 
 `word_position` counts characters, and a character outside the Basic Multilingual Plane, such as `𩸽` or an emoji, is one character.
 So `word_position - 1` is the index in the JavaScript string only when no such character comes before the word.
 
+A word that is not in the dictionary, such as `kuromojin` or `🍣`, is an unknown word: `word_type` is `UNKNOWN`, `basic_form` is `*`, and the token has no `reading` and no `pronunciation`. Its part of speech is a guess from the kind of its characters, mostly `名詞` or `記号`.
+
 The TypeScript type of a token is `KuromojiToken`.
+
+#### Parts of speech
+
+The values are the ones of the IPADIC dictionary, in Japanese. `pos` is one of these 13 values, and `pos_detail_1` is one of the values in its row.
+
+| `pos` | English | `pos_detail_1` | Example |
+| --- | --- | --- | --- |
+| `名詞` | Noun | `一般`, `固有名詞`, `サ変接続`, `形容動詞語幹`, `副詞可能`, `代名詞`, `数`, `接尾`, `非自立`, `ナイ形容詞語幹`, `接続詞的`, `動詞非自立的`, `特殊`, `引用文字列` | `辞書`, `東京`, `解析` |
+| `動詞` | Verb | `自立`, `非自立`, `接尾` | `買う`, `いる` |
+| `形容詞` | Adjective | `自立`, `非自立`, `接尾` | `速い` |
+| `副詞` | Adverb | `一般`, `助詞類接続` | `とても` |
+| `連体詞` | Adnominal | `*` | `この`, `大きな` |
+| `接続詞` | Conjunction | `*` | `しかし` |
+| `助詞` | Particle | `格助詞`, `係助詞`, `副助詞`, `接続助詞`, `終助詞`, `並立助詞`, `連体化`, `副詞化`, `特殊`, `副助詞／並立助詞／終助詞` | `を`, `は`, `の` |
+| `助動詞` | Auxiliary verb | `*` | `た`, `です` |
+| `接頭詞` | Prefix | `名詞接続`, `数接続`, `動詞接続`, `形容詞接続` | `第` |
+| `感動詞` | Interjection | `*` | `はい` |
+| `フィラー` | Filler | `*` | `えーと` |
+| `記号` | Symbol | `一般`, `句点`, `読点`, `括弧開`, `括弧閉`, `空白`, `アルファベット` | `。`, `、`, `「` |
+| `その他` | Other | `間投` | `ァ` |
+
+`pos_detail_2` and `pos_detail_3` have a value mostly for proper nouns, for example `人名` and `姓` for a family name, or `地域` and `国` for a country.
+`conjugated_type` has 58 values and `conjugated_form` has 28, so they are not listed here. Type a word in the [online playground](https://kuromojin.netlify.app/) to see its values.
 
 ### Returned tokens are shared and read-only
 
