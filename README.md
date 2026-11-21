@@ -91,7 +91,7 @@ const nounCounts = sentences.map((sentence) => {
 The tokenizer has two functions and nothing else.
 
 - `tokenizer.tokenizeForSentence(text)` analyzes the whole text as one piece. It returns the same array as `tokenize(text)` of kuromojin, because the two share the remembered tokens.
-- `tokenizer.tokenize(text)` is **deprecated**. It is a different analysis: it splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces. `word_position` still counts from the start of the text. It exists for code that was written for `tokenize` of kuromoji.js. Use `tokenizer.tokenizeForSentence(text)` or `tokenize(text)` in new code.
+- `tokenizer.tokenize(text)` is **deprecated**. It is a different analysis: it splits the text after each `、` and `。`, analyzes each piece, and returns the tokens of all pieces. `word_position` still counts from the start of the text. It exists only for compatibility with `tokenize` of the tokenizer of kuromoji.js. Use `tokenizer.tokenizeForSentence(text)` or `tokenize(text)` in new code.
 
 :warning: The names are confusing: `tokenize` of kuromojin is the same as `tokenizeForSentence` of the tokenizer, not as `tokenize` of the tokenizer.
 
