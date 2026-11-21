@@ -23,7 +23,7 @@ How kuromojin loads a dictionary and analyzes a text.
 
 The profile is a set of scripts under `benchmark/`. They are not part of the published package.
 The scripts are JavaScript that uses only the built-in modules of Node.js, so they run without a build step and measure a commit that knows nothing about them.
-Two commands start them: `yarn run profile` measures the working tree, and `yarn run compare` measures a base and the working tree. Both run the same code with one or two builds.
+Two commands start them: `pnpm run profile` measures the working tree, and `pnpm run compare` measures a base and the working tree. Both run the same code with one or two builds.
 
 ### A build is measured from outside
 
@@ -61,8 +61,8 @@ The Markdown shows the surface form of that token and the fields that differ.
 
 ### Builds
 
-The working tree is built with `yarn run build` before the measurements, unless the option not to build is given.
-The base is a Git worktree of its commit in the cache directory. Its dependencies are installed from its lock file without running the scripts of packages, and it is built with `yarn run build`.
+The working tree is built with `pnpm run build` before the measurements, unless the option not to build is given.
+The base is a Git worktree of its commit in the cache directory. Its dependencies are installed from its lock file without running the scripts of packages, and it is built with `run build`. Both use the package manager of its lock file: pnpm for `pnpm-lock.yaml`, and Yarn 1 for `yarn.lock` of the commits before the move to pnpm.
 A file in the worktree marks a finished build, so a build that was interrupted is made again, and a finished one is used again.
 
 ### Sets of texts
@@ -132,7 +132,7 @@ The result is one JSON object. No diagram is needed, because it is a tree.
 
 ### Commands
 
-`yarn run profile` and `yarn run compare` take these options. `--help` prints them.
+`pnpm run profile` and `pnpm run compare` take these options. `--help` prints them.
 
 | Option | Meaning | Default |
 | --- | --- | --- |

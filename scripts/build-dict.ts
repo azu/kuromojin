@@ -2,9 +2,9 @@
 // Build dict/kuromojin.dict, dict/DICTIONARY_VERSIONS.md, and src/analyzer/DictionaryVersion.ts.
 //
 // usage:
-//   ts-node scripts/build-dict.ts                    build the dictionary of the package
-//   ts-node scripts/build-dict.ts --entries <word>   print the entries of a word with their numbers
-//   ts-node scripts/build-dict.ts --rewrite-versions build even when a version of the existing file is changed.
+//   pnpm run build:dict                              build the dictionary of the package
+//   pnpm run build:dict --entries <word>             print the entries of a word with their numbers
+//   pnpm run build:dict --rewrite-versions           build even when a version of the existing file is changed.
 //                                                    Use it only for versions that are not released yet.
 import fs from "node:fs";
 import path from "node:path";
@@ -22,7 +22,8 @@ import {
 
 /** The date of the IPADIC data of kuromoji.js 0.1.2: mecab-ipadic-2.7.0-20070801 */
 const BASE_VERSION = "2007-08-01";
-const root = path.join(__dirname, "..");
+// `pnpm run build:dict` runs this script from test-build/scripts/
+const root = path.join(__dirname, "..", "..");
 const kuromojiDirectory = path.join(path.dirname(require.resolve("kuromoji/package.json")), "dict");
 const dictionaryFile = path.join(root, "dict", "kuromojin.dict");
 const versionListFile = path.join(root, "dict", "DICTIONARY_VERSIONS.md");

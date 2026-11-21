@@ -2,12 +2,15 @@
   "compilerOptions": {
     /* Basic Options */
     "module": "commonjs",
-    "moduleResolution": "node",
     "esModuleInterop": true,
     "newLine": "LF",
+    "rootDir": "./src/",
     "outDir": "./lib/",
     "target": "es2018",
     "sourceMap": true,
+    "types": [
+      "node"
+    ],
     "declaration": true,
     "jsx": "preserve",
     "lib": [

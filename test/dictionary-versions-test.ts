@@ -1,5 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
+import { before, beforeEach, describe, it } from "node:test";
 import type { DictionaryVersion, getTokenizerOption, KuromojiToken } from "../src";
 import {
     BASE_VERSION,
@@ -21,7 +22,6 @@ const version = (date: string) => date as DictionaryVersion;
 
 // The scenarios of docs/products/kuromojin/features/dictionary-versions/requirements.md
 describe("dictionary versions", function () {
-    this.timeout(120000);
     /** the dictionary for tests: 2027-04-01 adds 令和, 2027-10-01 adds スマホ */
     let dicPath: string;
     let kuromojin: ReturnType<typeof freshKuromojin>;
@@ -33,7 +33,7 @@ describe("dictionary versions", function () {
     });
     const withTestDictionary = <T>(callback: () => Promise<T>) => withSettings({ env: dicPath }, callback);
 
-    context("use newer words in a rule", function () {
+    describe("use newer words in a rule", function () {
         it("has the words of the version in the tokens when a call names a version", async function () {
             await withTestDictionary(async () => {
                 const tokens = await kuromojin.tokenize("令和元年", { dictionaryVersion: version("2027-04-01") });
@@ -87,7 +87,7 @@ describe("dictionary versions", function () {
         });
     });
 
-    context("keep the tokens of a rule when kuromojin is updated", function () {
+    describe("keep the tokens of a rule when kuromojin is updated", function () {
         it("does not change the tokens of an older version when the dictionary gets a newer version", async function () {
             const text = "令和にスマホを使う。令和元年は平成31年である。";
             const older = writeTestDictionary("older.dict", testVersions.slice(0, 1));
@@ -114,7 +114,7 @@ describe("dictionary versions", function () {
         });
     });
 
-    context("run rules with different versions together", function () {
+    describe("run rules with different versions together", function () {
         it("gives each caller the tokens of its own version, and reads the dictionary file once", async function () {
             await withTestDictionary(async () => {
                 let results: (readonly KuromojiToken[])[] = [];
@@ -171,7 +171,7 @@ describe("dictionary versions", function () {
         });
     });
 
-    context("notice a version that cannot be used", function () {
+    describe("notice a version that cannot be used", function () {
         it("rejects a date later than the newest version, and names both dates", async function () {
             await withTestDictionary(async () => {
                 await assert.rejects(
@@ -238,7 +238,7 @@ describe("dictionary versions", function () {
         });
     });
 
-    context("changes of a version", function () {
+    describe("changes of a version", function () {
         it("removes an entry of the base dictionary, adds an entry, and removes the added entry", async function () {
             const base = await withTestDictionary(() => kuromojin.tokenize("仕様について書く"));
             const entry = base.find((token) => token.surface_form === "について");

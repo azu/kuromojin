@@ -17,15 +17,21 @@ const defaultBase = () => {
     return ref;
 };
 
+/**
+ * The package manager of a commit, from its lock file.
+ * The commits before the move to pnpm use Yarn 1, so a base can be one of them.
+ */
+const packageManagerOf = (root) => (fs.existsSync(path.join(root, "yarn.lock")) ? "yarn" : "pnpm");
+
 const build = (root, label) => {
     log(`building ${label}`);
-    run("yarn", ["run", "build"], { cwd: root, label: `The build of ${label}` });
+    run(packageManagerOf(root), ["run", "build"], { cwd: root, label: `The build of ${label}` });
 };
 
 const checkBuilt = (root, label) => {
     const main = path.join(root, JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf-8")).main);
     if (!fs.existsSync(main)) {
-        throw new ProfileError(`${label} is not built: ${main} does not exist. Run "yarn run build" first.`);
+        throw new ProfileError(`${label} is not built: ${main} does not exist. Run "pnpm run build" first.`);
     }
 };
 
@@ -62,9 +68,10 @@ const prepareBase = (ref, cacheDir) => {
         git(["worktree", "add", "--detach", dir, commit]);
         log("installing the dependencies of the base");
         // --ignore-scripts: the scripts of the package would build it and set the Git hooks of the repository
-        run("yarn", ["install", "--frozen-lockfile", "--ignore-scripts"], {
+        const packageManager = packageManagerOf(dir);
+        run(packageManager, ["install", "--frozen-lockfile", "--ignore-scripts"], {
             cwd: dir,
-            label: "yarn install of the base"
+            label: `${packageManager} install of the base`
         });
         build(dir, "the base");
         fs.writeFileSync(marker, commit);

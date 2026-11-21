@@ -1,5 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
+import { after, before, beforeEach, describe, it } from "node:test";
 import fs from "node:fs";
 import http from "http";
 import path from "node:path";
@@ -19,9 +20,7 @@ import {
 
 // The scenarios of docs/products/kuromojin/features/dictionary/requirements.md
 describe("dictionary", function () {
-    this.timeout(60000);
-
-    context("dictionary path", function () {
+    describe("dictionary path", function () {
         it("uses the dictionary of the package when no dictionary path is given", async function () {
             await withSettings({}, async () => {
                 const kuromojin = freshKuromojin();
@@ -68,7 +67,7 @@ describe("dictionary", function () {
         });
     });
 
-    context("loading once", function () {
+    describe("loading once", function () {
         it("reads the dictionary once when many callers ask for the tokenizer at the same time", async function () {
             await withSettings({}, async () => {
                 const kuromojin = freshKuromojin();
@@ -94,7 +93,7 @@ describe("dictionary", function () {
         });
     });
 
-    context("dictionary of kuromoji.js", function () {
+    describe("dictionary of kuromoji.js", function () {
         it("loads a directory with the twelve files, and returns the same token as the dictionary of the package", async function () {
             await withSettings({}, async () => {
                 const kuromojin = freshKuromojin();
@@ -113,7 +112,7 @@ describe("dictionary", function () {
         });
     });
 
-    context("dictionary that cannot be loaded", function () {
+    describe("dictionary that cannot be loaded", function () {
         it("rejects with the error of the read, which names the file", async function () {
             await withSettings({ env: "/not-found-directory" }, async () => {
                 const kuromojin = freshKuromojin();
@@ -142,12 +141,11 @@ describe("dictionary", function () {
     });
 
     // Node.js has fetch and DecompressionStream, so the functions for a browser are tested with a local server.
-    context("in a browser", function () {
+    describe("in a browser", function () {
         let server: http.Server;
         let origin: string;
         let requests: string[];
-        before(function (done) {
-            if (typeof fetch === "undefined" || typeof DecompressionStream === "undefined") return this.skip();
+        before((_context, done) => {
             server = http.createServer((request, response) => {
                 const url = String(request.url);
                 requests.push(url);
@@ -172,9 +170,8 @@ describe("dictionary", function () {
         beforeEach(function () {
             requests = [];
         });
-        after(function (done) {
-            if (server) server.close(done);
-            else done();
+        after((_context, done) => {
+            server.close(() => done());
         });
 
         it("downloads one file for the dictionary of the package", async function () {

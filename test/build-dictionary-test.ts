@@ -1,5 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
+import { describe, it } from "node:test";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -17,11 +18,11 @@ import {
     kuromojiDictionaryDirectory,
     packageDictionaryFile,
     testVersions,
-    writeTestDictionary
+    writeTestDictionary,
+    root
 } from "./helpers";
 
 describe("build of the dictionary", function () {
-    this.timeout(120000);
     const files = readKuromojiFiles(kuromojiDictionaryDirectory);
     const baseEntries = readBaseEntries(files);
     const parse = (text: string) => parseVersions(text, BASE_VERSION, baseEntries, files["cc.dat.gz"]);
@@ -29,9 +30,9 @@ describe("build of the dictionary", function () {
     const heisei = baseEntries.find((entry) => entry.surface_form === "平成");
     if (!heisei) throw new Error("the base dictionary has 平成");
 
-    context("dictionary of the package", function () {
+    describe("dictionary of the package", function () {
         it("has the versions of dict-source/versions.csv", function () {
-            const source = fs.readFileSync(path.join(__dirname, "..", "dict-source", "versions.csv"), "utf8");
+            const source = fs.readFileSync(path.join(root, "dict-source", "versions.csv"), "utf8");
             const versions = parse(source);
             const stored = readDictionaryTable(fs.readFileSync(packageDictionaryFile)).versions;
             const built = readDictionaryTable(fs.readFileSync(writeTestDictionary("package.dict", versions))).versions;
@@ -41,13 +42,13 @@ describe("build of the dictionary", function () {
             assert.strictEqual(stored[0].entries, baseEntries.length);
         });
         it("has a list of versions for readers that is written from the same source", function () {
-            const source = fs.readFileSync(path.join(__dirname, "..", "dict-source", "versions.csv"), "utf8");
-            const list = fs.readFileSync(path.join(__dirname, "..", "dict", "DICTIONARY_VERSIONS.md"), "utf8");
+            const source = fs.readFileSync(path.join(root, "dict-source", "versions.csv"), "utf8");
+            const list = fs.readFileSync(path.join(root, "dict", "DICTIONARY_VERSIONS.md"), "utf8");
             assert.strictEqual(list, renderVersionList(BASE_VERSION, parse(source), baseEntries));
         });
         it("has a type of the dates of its versions that is written from the same source", function () {
-            const source = fs.readFileSync(path.join(__dirname, "..", "dict-source", "versions.csv"), "utf8");
-            const type = fs.readFileSync(path.join(__dirname, "..", "src", "analyzer", "DictionaryVersion.ts"), "utf8");
+            const source = fs.readFileSync(path.join(root, "dict-source", "versions.csv"), "utf8");
+            const type = fs.readFileSync(path.join(root, "src", "analyzer", "DictionaryVersion.ts"), "utf8");
             assert.strictEqual(type, renderVersionType(BASE_VERSION, parse(source)));
             const stored = readDictionaryTable(fs.readFileSync(packageDictionaryFile)).versions;
             for (const { date } of stored) assert.ok(type.includes(JSON.stringify(date)), date);
@@ -60,7 +61,7 @@ describe("build of the dictionary", function () {
         });
     });
 
-    context("changes of versions", function () {
+    describe("changes of versions", function () {
         it("reads added and removed entries with the date of their version", function () {
             const versions = parse(
                 [

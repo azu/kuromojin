@@ -3,6 +3,7 @@
 // This test is JavaScript too, because the scripts have no types.
 "use strict";
 const assert = require("node:assert");
+const { after, before, describe, it } = require("node:test");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -61,7 +62,7 @@ const lineOf = (markdown, start) => markdown.split("\n").find((line) => line.sta
 
 // The scenarios of docs/products/kuromojin/features/performance-profile/requirements.md
 describe("performance profile", function () {
-    context("comparison of two builds", function () {
+    describe("comparison of two builds", function () {
         it("marks the analysis as faster when the head analyzes faster", function () {
             const markdown = compare(measure(), measure({ linesMs: 100 }));
             assert.strictEqual(
@@ -132,7 +133,7 @@ describe("performance profile", function () {
         });
     });
 
-    context("profile of one build", function () {
+    describe("profile of one build", function () {
         it("shows every item of the working tree without a base", function () {
             const result = createResult(
                 { head },
@@ -169,7 +170,7 @@ describe("performance profile", function () {
         });
     });
 
-    context("sets of texts", function () {
+    describe("sets of texts", function () {
         it("takes each line that is not empty as a line, and each document as a file", function () {
             const texts = createTexts([
                 { path: "a.md", text: "一行目\r\n\r\n  \n二行目\n" },
@@ -184,7 +185,7 @@ describe("performance profile", function () {
         });
     });
 
-    context("CPU profile", function () {
+    describe("CPU profile", function () {
         it("sums the self time by package and by function, without the time that the process waits", function () {
             const root = path.join(os.tmpdir(), "kuromojin-build");
             const frame = (functionName, url) => ({ functionName, url, lineNumber: 0 });
@@ -219,7 +220,7 @@ describe("performance profile", function () {
         });
     });
 
-    context("installed size", function () {
+    describe("installed size", function () {
         it("counts the dependencies of the package and theirs, without devDependencies", function () {
             const root = fs.mkdtempSync(path.join(os.tmpdir(), "kuromojin-size-"));
             const write = (file, content) => {
@@ -250,8 +251,8 @@ describe("performance profile", function () {
         });
     });
 
-    context("measurements of a build", function () {
-        // The measurements run the source of the working tree as a build, through ts-node
+    describe("measurements of a build", function () {
+        // The measurements run the source of the working tree as a build: test-build/src/, which `pnpm test` compiles
         const texts = createTexts([{ path: "a.md", text: "吾輩は猫である。\n名前はまだ無い。\n𩸽𩸽を食べた\n" }]);
         let directory;
         let setFile;
@@ -260,18 +261,15 @@ describe("performance profile", function () {
                 process.execPath,
                 [
                     "--expose-gc",
-                    "--require",
-                    "ts-node/register",
                     path.join(__dirname, "../benchmark/worker.js"),
                     measurement,
-                    path.join(__dirname, "../src"),
+                    path.join(__dirname, "../test-build/src"),
                     setFile,
                     ...(argument === undefined ? [] : [argument])
                 ],
                 {
                     cwd: path.join(__dirname, ".."),
-                    encoding: "utf-8",
-                    env: { ...process.env, TS_NODE_TRANSPILE_ONLY: "1" }
+                    encoding: "utf-8"
                 }
             );
             assert.strictEqual(result.status, 0, result.stderr);
@@ -287,7 +285,6 @@ describe("performance profile", function () {
         });
 
         it("gives the same digest for the same tokens, and the tokens of a selected text", function () {
-            this.timeout(60000);
             const digests = run("digest");
             assert.strictEqual(digests.lines.length, 3);
             assert.strictEqual(digests.files.length, 1);
@@ -302,7 +299,6 @@ describe("performance profile", function () {
         });
         it("measures the load, the times, and the allocation", function () {
             // three processes that load the dictionary, and passes that are repeated for half a second
-            this.timeout(60000);
             const load = run("load");
             assert.ok(load.loadMs >= load.requireMs && load.requireMs > 0);
             assert.ok(load.memoryMB > 1);

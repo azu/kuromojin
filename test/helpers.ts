@@ -13,9 +13,13 @@ import {
 } from "../scripts/buildDictionary";
 
 export const kuromojiDictionaryDirectory = path.join(path.dirname(require.resolve("kuromoji/package.json")), "dict");
+/** The root of the repository. The tests run from test-build/test/, where `pnpm test` compiles them */
+export const root = path.join(__dirname, "..", "..");
+/** The dictionary of the package, as the compiled source finds it: test-build/dict/ is a link to dict/ */
 export const packageDictionaryFile = path.join(__dirname, "..", "dict", "kuromojin.dict");
 export const BASE_VERSION = "2007-08-01";
 
+// the compiled source: test-build/src/
 const sourceDirectory = path.join(__dirname, "..", "src") + path.sep;
 /**
  * Load kuromojin again as a new module, with no dictionary loaded.

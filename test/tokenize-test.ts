@@ -1,5 +1,6 @@
 // LICENSE : MIT
 import assert from "node:assert";
+import { describe, it } from "node:test";
 import { getTokenizer, tokenize } from "../src";
 
 // The scenarios of docs/products/kuromojin/features/tokenization/requirements.md
@@ -80,7 +81,7 @@ describe("tokenize", function () {
         }
     });
 
-    context("reuse of tokens", function () {
+    describe("reuse of tokens", function () {
         it("returns the same array when the same text is tokenized again", async function () {
             const first = await tokenize("同じテキストを二度解析する");
             const second = await tokenize("同じテキストを二度解析する");

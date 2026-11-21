@@ -56,6 +56,10 @@ jobs:
         env:
           VERSION: ${{ steps.package.outputs.version }}
 
+      - name: Setup pnpm
+        if: steps.tag-check.outputs.exists == 'false'
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
       - name: Setup Node.js
         if: steps.tag-check.outputs.exists == 'false'
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -64,15 +68,16 @@ jobs:
           # OIDC trusted publishing requires npm 11.5.1+ (bundled with Node.js 24)
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
 
       - name: Install dependencies
         if: steps.tag-check.outputs.exists == 'false'
-        run: yarn install --frozen-lockfile --ignore-scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       # npm 7+ does not run `prepublish` on publish, so build lib/ explicitly
       - name: Build
         if: steps.tag-check.outputs.exists == 'false'
-        run: yarn run build
+        run: pnpm run build
 
       # Stage the package on npm. A maintainer approves it with 2FA to publish it.
       # https://docs.npmjs.com/staged-publishing
